@@ -1,0 +1,42 @@
+/**
+ * Structured logging utility using Pino
+ */
+
+import pino from 'pino';
+
+const logger = pino({
+  level: process.env.LOG_LEVEL || 'info',
+  transport: process.env.NODE_ENV === 'development' 
+    ? { target: 'pino-pretty', options: { colorize: true } }
+    : undefined
+});
+
+export default logger;
+
+export const logApiRequest = (
+  method: string, 
+  path: string, 
+  statusCode: number, 
+  duration: number,
+  context?: any
+) => {
+  const level = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
+  logger[level]({ method, path, statusCode, duration, ...context }, 
+    `${method} ${path} - ${statusCode} (${duration}ms)`);
+};
+
+export const logError = (error: Error, context?: any) => {
+  logger.error({ err: error, ...context }, error.message);
+};
+
+export const logInfo = (message: string, context?: any) => {
+  logger.info(context, message);
+};
+
+export const logStartup = (port: number, env: string, version: string) => {
+  logInfo('🚀 Server started successfully', { port, env, version });
+};
+
+export const logShutdown = (signal: string) => {
+  logInfo('👋 Server shutting down gracefully', { signal });
+};
