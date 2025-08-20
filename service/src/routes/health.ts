@@ -3,9 +3,9 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { HealthCheck, ApiResponse } from '@/types/config';
-import { logInfo, logError } from '@/utils/logger';
-import { asyncHandler } from '@/middleware/error';
+import { HealthCheck, ApiResponse } from '../types/config';
+import { logInfo, logError } from '../utils/logger';
+import { asyncHandler } from '../middleware/error';
 
 const router = Router();
 const startTime = Date.now();
@@ -31,6 +31,7 @@ router.get('/ready', asyncHandler(async (req: Request, res: Response) => {
       version
     }
   };
+
   res.status(200).json(response);
 }));
 
@@ -46,6 +47,7 @@ router.get('/live', asyncHandler(async (req: Request, res: Response) => {
       version
     }
   };
+
   res.status(200).json(response);
 }));
 

@@ -22,7 +22,7 @@
     "typescript",
     "express"
   ],
-  "author": "Your Name",
+  "author": "Abhishek",
   "license": "MIT",
   "dependencies": {
     "compression": "^1.7.4",

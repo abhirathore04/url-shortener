@@ -3,8 +3,8 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { ApiResponse } from '@/types/config';
-import { logError } from '@/utils/logger';
+import { ApiResponse } from '../types/config';
+import { logError } from '../utils/logger';
 
 // Custom error class for API errors
 export class ApiError extends Error {
@@ -17,6 +17,7 @@ export class ApiError extends Error {
     this.statusCode = statusCode;
     this.code = code;
     this.isOperational = isOperational;
+
     Error.captureStackTrace(this, this.constructor);
   }
 }

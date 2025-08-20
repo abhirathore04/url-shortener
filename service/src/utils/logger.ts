@@ -6,7 +6,7 @@ import pino from 'pino';
 
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
-  transport: process.env.NODE_ENV === 'development' 
+  transport: process.env.NODE_ENV === 'development'
     ? { target: 'pino-pretty', options: { colorize: true } }
     : undefined
 });
@@ -14,14 +14,14 @@ const logger = pino({
 export default logger;
 
 export const logApiRequest = (
-  method: string, 
-  path: string, 
-  statusCode: number, 
+  method: string,
+  path: string,
+  statusCode: number,
   duration: number,
   context?: any
 ) => {
   const level = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
-  logger[level]({ method, path, statusCode, duration, ...context }, 
+  logger[level]({ method, path, statusCode, duration, ...context },
     `${method} ${path} - ${statusCode} (${duration}ms)`);
 };
 

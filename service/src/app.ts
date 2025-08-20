@@ -7,10 +7,10 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import { requestLogging, debugLogging } from '@/middleware/logging';
-import { errorHandler, notFoundHandler } from '@/middleware/error';
-import healthRouter from '@/routes/health';
-import { logInfo } from '@/utils/logger';
+import { requestLogging, debugLogging } from './middleware/logging';
+import { errorHandler, notFoundHandler } from './middleware/error';
+import healthRouter from './routes/health';
+import { logInfo } from './utils/logger';
 
 export function createApp(): express.Application {
   const app = express();
@@ -25,15 +25,15 @@ export function createApp(): express.Application {
   }));
 
   // CORS configuration
-  const corsOrigins = process.env.CORS_ORIGINS 
+  const corsOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
     : ['http://localhost:3000', 'http://localhost:8080'];
-    
+
   app.use(cors({
     origin: function (origin, callback) {
       // Allow requests with no origin (mobile apps, Postman, etc.)
       if (!origin) return callback(null, true);
-      
+
       if (corsOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {
@@ -60,13 +60,13 @@ export function createApp(): express.Application {
   }));
 
   // Body parsing middleware
-  app.use(express.json({ 
+  app.use(express.json({
     limit: '10mb',
-    type: ['application/json', 'text/plain'] 
+    type: ['application/json', 'text/plain']
   }));
-  app.use(express.urlencoded({ 
-    extended: true, 
-    limit: '10mb' 
+  app.use(express.urlencoded({
+    extended: true,
+    limit: '10mb'
   }));
 
   // Custom middleware
@@ -86,10 +86,17 @@ export function createApp(): express.Application {
         service: 'URL Shortener',
         version: process.env.OTEL_SERVICE_VERSION || '0.1.0',
         status: 'running',
+        environment: process.env.NODE_ENV,
+        container: {
+          hostname: process.env.HOSTNAME || 'localhost',
+          platform: process.platform,
+          nodeVersion: process.version
+        },
         endpoints: {
           health: '/health',
           ready: '/health/ready',
-          live: '/health/live'
+          live: '/health/live',
+          metrics: '/metrics'
         }
       },
       meta: {
@@ -98,33 +105,41 @@ export function createApp(): express.Application {
     });
   });
 
-  // Debug routes (only in development)
-  if (process.env.ENABLE_DEBUG_ROUTES === 'true') {
-    app.get('/debug/config', (req, res) => {
-      // Only show safe configuration values
-      const safeConfig = {
-        NODE_ENV: process.env.NODE_ENV,
-        PORT: process.env.PORT,
-        LOG_LEVEL: process.env.LOG_LEVEL,
-        OTEL_SERVICE_NAME: process.env.OTEL_SERVICE_NAME,
-        OTEL_SERVICE_VERSION: process.env.OTEL_SERVICE_VERSION,
-        ENABLE_DEBUG_ROUTES: process.env.ENABLE_DEBUG_ROUTES,
-        CORS_ORIGINS: process.env.CORS_ORIGINS,
-        timestamp: new Date().toISOString()
-      };
-      res.json({ config: safeConfig });
-    });
+  // Prometheus metrics endpoint
+  if (process.env.ENABLE_METRICS_ENDPOINT === 'true') {
+    app.get('/metrics', (req, res) => {
+      const memUsage = process.memoryUsage();
+      const uptime = process.uptime();
 
-    app.get('/debug/env', (req, res) => {
-      // Show all environment variables (excluding secrets)
-      const envVars = Object.keys(process.env)
-        .filter(key => !key.includes('SECRET') && !key.includes('PASSWORD') && !key.includes('KEY'))
-        .reduce((obj, key) => {
-          obj[key] = process.env[key];
-          return obj;
-        }, {} as Record<string, string | undefined>);
-      
-      res.json({ env: envVars });
+      const metrics = [
+        '# HELP nodejs_version_info Node.js version info',
+        '# TYPE nodejs_version_info gauge',
+        `nodejs_version_info{version="${process.version}",major="${process.versions.node.split('.')[0]}"} 1`,
+        '',
+        '# HELP process_cpu_user_seconds_total Total user CPU time spent in seconds',
+        '# TYPE process_cpu_user_seconds_total counter',
+        `process_cpu_user_seconds_total ${process.cpuUsage().user / 1000000}`,
+        '',
+        '# HELP process_cpu_system_seconds_total Total system CPU time spent in seconds',
+        '# TYPE process_cpu_system_seconds_total counter',
+        `process_cpu_system_seconds_total ${process.cpuUsage().system / 1000000}`,
+        '',
+        '# HELP process_resident_memory_bytes Resident memory size in bytes',
+        '# TYPE process_resident_memory_bytes gauge',
+        `process_resident_memory_bytes ${process.memoryUsage().rss}`,
+        '',
+        '# HELP process_heap_bytes Heap memory size in bytes',
+        '# TYPE process_heap_bytes gauge',
+        `process_heap_bytes ${process.memoryUsage().heapUsed}`,
+        '',
+        '# HELP process_start_time_seconds Start time of the process since unix epoch',
+        '# TYPE process_start_time_seconds gauge',
+        `process_start_time_seconds ${Math.floor(Date.now() / 1000) - Math.floor(process.uptime())}`,
+        ''
+      ].join('\n');
+
+      res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+      res.send(metrics);
     });
   }
 

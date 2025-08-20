@@ -3,7 +3,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
-import { logApiRequest } from '@/utils/logger';
+import { logApiRequest } from '../utils/logger';
 
 export const requestLogging = (
   req: Request,
@@ -11,28 +11,28 @@ export const requestLogging = (
   next: NextFunction
 ) => {
   const startTime = Date.now();
-  
+
   // Store original end function
   const originalEnd = res.end.bind(res);
-  
-  // Simple override using any casting to avoid complex type issues
+
+  // Override end function to capture response timing
   (res as any).end = (...args: any[]) => {
     const duration = Date.now() - startTime;
-    
+
     // Extract useful request info
     const context = {
       userAgent: req.get('User-Agent'),
       remoteAddr: req.ip || req.connection?.remoteAddress,
       query: Object.keys(req.query).length > 0 ? req.query : undefined
     };
-    
+
     // Log the request
     logApiRequest(req.method, req.path, res.statusCode, duration, context);
-    
+
     // Call the original end function
     return originalEnd(...args);
   };
-  
+
   next();
 };
 
@@ -47,5 +47,6 @@ export const debugLogging = (req: Request, res: Response, next: NextFunction) =>
       query: req.query
     });
   }
+
   next();
 };
