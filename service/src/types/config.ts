@@ -9,13 +9,13 @@ export interface HealthCheck {
   uptime: number;
 }
 
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: {
     code: string;
     message: string;
-    details?: any;
+    details?: Record<string, unknown>;
   };
   meta: {
     timestamp: string;
@@ -24,7 +24,7 @@ export interface ApiResponse<T = any> {
 }
 
 export interface LogContext {
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface RequestContext {
@@ -34,17 +34,17 @@ export interface RequestContext {
   duration?: number;
   userAgent?: string;
   remoteAddr?: string;
-  query?: any;
+  query?: Record<string, unknown>;
 }
 
 export interface AppConfig {
   PORT: string;
   NODE_ENV: string;
   LOG_LEVEL: string;
-  MONGO_URI?: string; // Made optional with ?
+  MONGO_URI?: string;
   JWT_SECRET: string;
   CORS_ORIGINS: string;
   OTEL_SERVICE_VERSION: string;
-  ENABLE_DEBUG_ROUTES?: string; // Made optional with ?
-  ENABLE_METRICS_ENDPOINT?: string; // Made optional with ?
+  ENABLE_DEBUG_ROUTES?: string;
+  ENABLE_METRICS_ENDPOINT?: string;
 }

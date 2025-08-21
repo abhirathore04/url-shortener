@@ -1,7 +1,6 @@
 /**
  * Structured logging utility using Pino
  */
-
 import pino from 'pino';
 
 // Create transport configuration conditionally
@@ -33,21 +32,32 @@ export const logApiRequest = (
   path: string,
   statusCode: number,
   duration: number,
-  context?: any
+  context?: Record<string, unknown>
 ) => {
   const level = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
-  logger[level](
-    { method, path, statusCode, duration, ...context },
-    `${method} ${path} - ${statusCode} (${duration}ms)`
-  );
+  const logData = { method, path, statusCode, duration };
+
+  // Safely merge context to avoid object injection
+  if (context && typeof context === 'object') {
+    Object.assign(logData, context);
+  }
+
+  logger[level](logData, `${method} ${path} - ${statusCode} (${duration}ms)`);
 };
 
-export const logError = (error: Error, context?: any) => {
-  logger.error({ err: error, ...context }, error.message);
+export const logError = (error: Error, context?: Record<string, unknown>) => {
+  const logData: Record<string, unknown> = { err: error };
+
+  // Safely merge context to avoid object injection
+  if (context && typeof context === 'object') {
+    Object.assign(logData, context);
+  }
+
+  logger.error(logData, error.message);
 };
 
-export const logInfo = (message: string, context?: any) => {
-  logger.info(context, message);
+export const logInfo = (message: string, context?: Record<string, unknown>) => {
+  logger.info(context && typeof context === 'object' ? context : {}, message);
 };
 
 export const logStartup = (port: number, env: string, version: string) => {

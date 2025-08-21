@@ -1,8 +1,8 @@
 /**
  * Global error handling middleware
  */
-
 import { Request, Response, NextFunction } from 'express';
+
 import { ApiResponse } from '../types/config';
 import { logError } from '../utils/logger';
 
@@ -17,13 +17,12 @@ export class ApiError extends Error {
     this.statusCode = statusCode;
     this.code = code;
     this.isOperational = isOperational;
-
     Error.captureStackTrace(this, this.constructor);
   }
 }
 
 // Main error handler middleware
-export const errorHandler = (error: Error, req: Request, res: Response, next: NextFunction) => {
+export const errorHandler = (error: Error, req: Request, res: Response, _next: NextFunction) => {
   logError(error, {
     method: req.method,
     path: req.path,
@@ -65,6 +64,8 @@ export const notFoundHandler = (req: Request, res: Response) => {
 };
 
 // Async error wrapper
-export const asyncHandler = (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
-  Promise.resolve(fn(req, res, next)).catch(next);
-};
+export const asyncHandler =
+  (fn: (req: Request, res: Response, next: NextFunction) => Promise<void>) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };

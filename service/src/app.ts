@@ -2,13 +2,13 @@
  * Express application configuration
  * Sets up middleware, routes, and error handling in the correct order
  */
-
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
 import compression from 'compression';
-import { requestLogging, debugLogging } from './middleware/logging';
+import cors from 'cors';
+import express from 'express';
+import helmet from 'helmet';
+
 import { errorHandler, notFoundHandler } from './middleware/error';
+import { requestLogging, debugLogging } from './middleware/logging';
 import healthRouter from './routes/health';
 import { logInfo } from './utils/logger';
 
@@ -72,6 +72,7 @@ export function createApp(): express.Application {
       type: ['application/json', 'text/plain'],
     })
   );
+
   app.use(
     express.urlencoded({
       extended: true,
@@ -81,6 +82,7 @@ export function createApp(): express.Application {
 
   // Custom middleware
   app.use(requestLogging);
+
   if (process.env.LOG_LEVEL === 'debug') {
     app.use(debugLogging);
   }
@@ -118,9 +120,6 @@ export function createApp(): express.Application {
   // Prometheus metrics endpoint
   if (process.env.ENABLE_METRICS_ENDPOINT === 'true') {
     app.get('/metrics', (req, res) => {
-      const memUsage = process.memoryUsage();
-      const uptime = process.uptime();
-
       const metrics = [
         '# HELP nodejs_version_info Node.js version info',
         '# TYPE nodejs_version_info gauge',

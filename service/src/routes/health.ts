@@ -1,11 +1,10 @@
 /**
  * Health check endpoint
  */
-
 import { Router, Request, Response } from 'express';
-import { HealthCheck, ApiResponse } from '../types/config';
-import { logInfo, logError } from '../utils/logger';
+
 import { asyncHandler } from '../middleware/error';
+import { HealthCheck, ApiResponse } from '../types/config';
 
 const router = Router();
 const startTime = Date.now();

@@ -10,7 +10,7 @@
     "clean": "rimraf dist coverage",
     "lint": "eslint src --ext .ts --fix",
     "lint:check": "eslint src --ext .ts",
-    "lint:ci": "eslint src --ext .ts --format junit --output-file reports/eslint.xml",
+    "lint:ci": "eslint src --ext .ts --format json --output-file eslint-report.json",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json,md}\"",

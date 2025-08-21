@@ -1,18 +1,18 @@
 /**
  * HTTP request logging middleware
  */
-
 import { Request, Response, NextFunction } from 'express';
+
 import { logApiRequest } from '../utils/logger';
 
 export const requestLogging = (req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
 
   // Store original end function
-  const originalEnd = res.end.bind(res);
+  const originalEnd = res.end;
 
   // Override end function to capture response timing
-  (res as any).end = (...args: any[]) => {
+  res.end = function (this: Response, ...args: any[]): Response {
     const duration = Date.now() - startTime;
 
     // Extract useful request info
@@ -25,9 +25,9 @@ export const requestLogging = (req: Request, res: Response, next: NextFunction) 
     // Log the request
     logApiRequest(req.method, req.path, res.statusCode, duration, context);
 
-    // Call the original end function
-    return originalEnd(...args);
-  };
+    // Call the original end function with all arguments
+    return originalEnd.apply(this, args as any);
+  } as any;
 
   next();
 };
@@ -35,6 +35,7 @@ export const requestLogging = (req: Request, res: Response, next: NextFunction) 
 // Additional middleware for detailed request logging in debug mode
 export const debugLogging = (req: Request, res: Response, next: NextFunction) => {
   if (process.env.LOG_LEVEL === 'debug') {
+    // eslint-disable-next-line no-console
     console.log('🔍 Debug Request:', {
       method: req.method,
       url: req.url,
@@ -43,6 +44,5 @@ export const debugLogging = (req: Request, res: Response, next: NextFunction) =>
       query: req.query,
     });
   }
-
   next();
 };
