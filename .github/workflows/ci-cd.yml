@@ -25,7 +25,7 @@ permissions:
   security-events: write
   actions: read
   issues: write
-  packages: write  # ← Critical: Added for Docker registry push
+  packages: write
 
 env:
   NODE_VERSION: '20'
@@ -200,7 +200,7 @@ jobs:
     outputs:
       image-tag: ${{ steps.meta.outputs.tags }}
       image-digest: ${{ steps.build.outputs.digest }}
-      single-tag: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+      scan-ref: ${{ steps.scan-ref.outputs.ref }}
       
     steps:
       - name: 📥 Checkout Repository
@@ -218,6 +218,15 @@ jobs:
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+
+      - name: 🎯 Set Scan Reference
+        id: scan-ref
+        run: |
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            echo "ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:pr-${{ github.event.number }}" >> $GITHUB_OUTPUT
+          else
+            echo "ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          fi
 
       - name: 🏗️ Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -243,9 +252,10 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: 🔒 Run Trivy Security Scan
+        if: github.event_name != 'pull_request'
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}
+          image-ref: ${{ steps.scan-ref.outputs.ref }}
           format: 'table'
           exit-code: '0'
 
@@ -269,7 +279,7 @@ jobs:
       - name: 🎯 Deploy to Staging Environment
         run: |
           echo "🚀 Starting staging deployment..."
-          echo "Image: ${{ needs.docker-build.outputs.image-tag }}"
+          echo "Image: ${{ needs.docker-build.outputs.scan-ref }}"
           echo "✅ Staging deployment simulated successfully"
 
       - name: 🧪 Run Staging Smoke Tests
@@ -298,7 +308,7 @@ jobs:
       - name: 🎯 Blue-Green Production Deployment
         run: |
           echo "🎯 Starting blue-green production deployment..."
-          echo "Image: ${{ needs.docker-build.outputs.image-tag }}"
+          echo "Image: ${{ needs.docker-build.outputs.scan-ref }}"
           echo "✅ Production deployment completed successfully"
 
       - name: 📢 Deployment Notification
@@ -307,7 +317,7 @@ jobs:
           status="${{ job.status }}"
           if [ "$status" == "success" ]; then
             echo "🎉 Production deployment completed successfully!"
-            echo "📊 Image: ${{ needs.docker-build.outputs.image-tag }}"
+            echo "📊 Image: ${{ needs.docker-build.outputs.scan-ref }}"
             echo "🔗 Commit: ${{ github.sha }}"
             echo "👤 Deployed by: ${{ github.actor }}"
           else
