@@ -25,6 +25,7 @@ permissions:
   security-events: write
   actions: read
   issues: write
+  packages: write  # ← Critical: Added for Docker registry push
 
 env:
   NODE_VERSION: '20'
@@ -199,6 +200,7 @@ jobs:
     outputs:
       image-tag: ${{ steps.meta.outputs.tags }}
       image-digest: ${{ steps.build.outputs.digest }}
+      single-tag: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
       
     steps:
       - name: 📥 Checkout Repository
@@ -243,7 +245,7 @@ jobs:
       - name: 🔒 Run Trivy Security Scan
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ steps.meta.outputs.tags }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:commit-${{ github.sha }}
           format: 'table'
           exit-code: '0'
 
