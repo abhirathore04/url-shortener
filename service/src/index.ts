@@ -33,7 +33,7 @@ console.log('- OTEL_SERVICE_VERSION:', process.env.OTEL_SERVICE_VERSION);
 try {
   // Import modules after environment setup
   console.log('📦 Loading application modules...');
-  
+
   const { validateEnvironment } = require('./configs/env-validator');
   const { createApp } = require('./app');
   const { logStartup, logShutdown, logError, logInfo } = require('./utils/logger');
@@ -45,7 +45,7 @@ try {
     logError(new Error('Unhandled Rejection'), {
       event: 'unhandled_rejection',
       reason: reason instanceof Error ? reason.message : String(reason),
-      promise: String(promise)
+      promise: String(promise),
     });
     // Exit gracefully
     process.exit(1);
@@ -53,7 +53,7 @@ try {
 
   process.on('uncaughtException', (error) => {
     logError(error, {
-      event: 'uncaught_exception'
+      event: 'uncaught_exception',
     });
     // Exit immediately - uncaught exceptions are dangerous
     process.exit(1);
@@ -73,7 +73,7 @@ try {
       // 3. Start HTTP server
       const port = parseInt(config.PORT, 10);
       console.log(`🚀 Starting server on port ${port}...`);
-      
+
       const server = app.listen(port, '0.0.0.0', () => {
         logStartup(port, config.NODE_ENV, config.OTEL_SERVICE_VERSION);
 
@@ -85,10 +85,10 @@ try {
             `http://localhost:${port}/health`,
             `http://localhost:${port}/health/ready`,
             `http://localhost:${port}/health/live`,
-            ...(config.ENABLE_METRICS_ENDPOINT === 'true' ? [
-              `http://localhost:${port}/metrics`
-            ] : [])
-          ]
+            ...(config.ENABLE_METRICS_ENDPOINT === 'true'
+              ? [`http://localhost:${port}/metrics`]
+              : []),
+          ],
         });
       });
 
@@ -118,11 +118,10 @@ try {
       });
 
       return server;
-
     } catch (error) {
       console.error('❌ Server startup failed:', error);
       logError(error as Error, {
-        event: 'startup_failed'
+        event: 'startup_failed',
       });
       process.exit(1);
     }
@@ -137,13 +136,13 @@ try {
       server.close((err: Error) => {
         if (err) {
           logError(err, {
-            event: 'shutdown_error'
+            event: 'shutdown_error',
           });
           process.exit(1);
         }
 
         logInfo('✅ Server closed successfully', {
-          event: 'server_closed'
+          event: 'server_closed',
         });
 
         process.exit(0);
@@ -152,7 +151,7 @@ try {
       // Force shutdown after timeout
       const shutdownTimeout = setTimeout(() => {
         logError(new Error('❌ Forced shutdown after 30 seconds timeout'), {
-          event: 'forced_shutdown'
+          event: 'forced_shutdown',
         });
         process.exit(1);
       }, 30000);
@@ -173,12 +172,11 @@ try {
     startServer().catch((error) => {
       console.error('❌ Critical startup error:', error);
       logError(error, {
-        event: 'startup_error'
+        event: 'startup_error',
       });
       process.exit(1);
     });
   }
-
 } catch (error) {
   console.error('❌ Critical import or initialization error:', error);
   console.error('Stack trace:', (error as Error).stack);

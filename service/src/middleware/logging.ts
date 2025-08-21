@@ -5,11 +5,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { logApiRequest } from '../utils/logger';
 
-export const requestLogging = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const requestLogging = (req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
 
   // Store original end function
@@ -23,7 +19,7 @@ export const requestLogging = (
     const context = {
       userAgent: req.get('User-Agent'),
       remoteAddr: req.ip || req.connection?.remoteAddress,
-      query: Object.keys(req.query).length > 0 ? req.query : undefined
+      query: Object.keys(req.query).length > 0 ? req.query : undefined,
     };
 
     // Log the request
@@ -44,7 +40,7 @@ export const debugLogging = (req: Request, res: Response, next: NextFunction) =>
       url: req.url,
       headers: req.headers,
       body: req.method !== 'GET' ? req.body : undefined,
-      query: req.query
+      query: req.query,
     });
   }
 

@@ -23,12 +23,7 @@ export class ApiError extends Error {
 }
 
 // Main error handler middleware
-export const errorHandler = (
-  error: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
+export const errorHandler = (error: Error, req: Request, res: Response, next: NextFunction) => {
   logError(error, {
     method: req.method,
     path: req.path,

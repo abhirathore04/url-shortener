@@ -8,14 +8,12 @@
     "build": "npm run clean && tsc",
     "start": "node dist/index.js",
     "clean": "rimraf dist coverage",
-    
     "lint": "eslint src --ext .ts --fix",
     "lint:check": "eslint src --ext .ts",
     "lint:ci": "eslint src --ext .ts --format junit --output-file reports/eslint.xml",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json,md}\"",
-    
     "test": "jest",
     "test:unit": "jest --testMatch='**/tests/unit/**/*.test.ts' --coverage --coverageDirectory=coverage/unit",
     "test:integration": "jest --testMatch='**/tests/integration/**/*.test.ts' --coverage --coverageDirectory=coverage/integration --runInBand",
@@ -23,18 +21,23 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage && open-cli coverage/lcov-report/index.html",
     "test:ci": "jest --ci --coverage --coverageReporters=text-lcov --passWithNoTests",
-    
     "docker:build": "docker build -t url-shortener:latest .",
     "docker:run": "docker run -p 8080:8080 url-shortener:latest",
     "docker:compose:up": "docker compose -f ../infra/docker-compose.yml up -d",
     "docker:compose:down": "docker compose -f ../infra/docker-compose.yml down",
-    
     "security:audit": "npm audit --audit-level high",
     "security:fix": "npm audit fix",
     "deps:update": "npm-check-updates -u && npm install",
     "deps:check": "npm-check-updates --doctor"
   },
-  "keywords": ["url", "shortener", "api", "typescript", "express", "mongodb"],
+  "keywords": [
+    "url",
+    "shortener",
+    "api",
+    "typescript",
+    "express",
+    "mongodb"
+  ],
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
@@ -79,7 +82,10 @@
   "jest": {
     "preset": "ts-jest",
     "testEnvironment": "node",
-    "roots": ["<rootDir>/tests", "<rootDir>/src"],
+    "roots": [
+      "<rootDir>/tests",
+      "<rootDir>/src"
+    ],
     "testMatch": [
       "**/tests/**/*.test.ts"
     ],
@@ -90,7 +96,12 @@
       "!src/**/*.spec.ts"
     ],
     "coverageDirectory": "coverage",
-    "coverageReporters": ["text", "lcov", "html", "json"],
+    "coverageReporters": [
+      "text",
+      "lcov",
+      "html",
+      "json"
+    ],
     "coverageThreshold": {
       "global": {
         "branches": 70,
@@ -99,7 +110,9 @@
         "statements": 70
       }
     },
-    "setupFilesAfterEnv": ["<rootDir>/tests/setup.ts"],
+    "setupFilesAfterEnv": [
+      "<rootDir>/tests/setup.ts"
+    ],
     "testTimeout": 30000
   },
   "engines": {

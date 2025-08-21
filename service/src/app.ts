@@ -19,55 +19,65 @@ export function createApp(): express.Application {
   app.set('trust proxy', true);
 
   // Security middleware - should be first
-  app.use(helmet({
-    contentSecurityPolicy: process.env.NODE_ENV === 'production',
-    crossOriginEmbedderPolicy: false // Allow embedding for development
-  }));
+  app.use(
+    helmet({
+      contentSecurityPolicy: process.env.NODE_ENV === 'production',
+      crossOriginEmbedderPolicy: false, // Allow embedding for development
+    })
+  );
 
   // CORS configuration
   const corsOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',').map(origin => origin.trim())
+    ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
     : ['http://localhost:3000', 'http://localhost:8080'];
 
-  app.use(cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) return callback(null, true);
+  app.use(
+    cors({
+      origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
 
-      if (corsOrigins.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-  }));
+        if (corsOrigins.indexOf(origin) !== -1) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    })
+  );
 
   // Compression middleware
-  app.use(compression({
-    filter: (req, res) => {
-      // Don't compress if no-transform cache-control header is set
-      if (req.headers['cache-control'] && req.headers['cache-control'].includes('no-transform')) {
-        return false;
-      }
-      // Use default compression filter
-      return compression.filter(req, res);
-    },
-    level: 6, // Balanced compression level
-    threshold: 1024 // Only compress responses larger than 1KB
-  }));
+  app.use(
+    compression({
+      filter: (req, res) => {
+        // Don't compress if no-transform cache-control header is set
+        if (req.headers['cache-control'] && req.headers['cache-control'].includes('no-transform')) {
+          return false;
+        }
+        // Use default compression filter
+        return compression.filter(req, res);
+      },
+      level: 6, // Balanced compression level
+      threshold: 1024, // Only compress responses larger than 1KB
+    })
+  );
 
   // Body parsing middleware
-  app.use(express.json({
-    limit: '10mb',
-    type: ['application/json', 'text/plain']
-  }));
-  app.use(express.urlencoded({
-    extended: true,
-    limit: '10mb'
-  }));
+  app.use(
+    express.json({
+      limit: '10mb',
+      type: ['application/json', 'text/plain'],
+    })
+  );
+  app.use(
+    express.urlencoded({
+      extended: true,
+      limit: '10mb',
+    })
+  );
 
   // Custom middleware
   app.use(requestLogging);
@@ -90,18 +100,18 @@ export function createApp(): express.Application {
         container: {
           hostname: process.env.HOSTNAME || 'localhost',
           platform: process.platform,
-          nodeVersion: process.version
+          nodeVersion: process.version,
         },
         endpoints: {
           health: '/health',
           ready: '/health/ready',
           live: '/health/live',
-          metrics: '/metrics'
-        }
+          metrics: '/metrics',
+        },
       },
       meta: {
-        timestamp: new Date().toISOString()
-      }
+        timestamp: new Date().toISOString(),
+      },
     });
   });
 
@@ -135,7 +145,7 @@ export function createApp(): express.Application {
         '# HELP process_start_time_seconds Start time of the process since unix epoch',
         '# TYPE process_start_time_seconds gauge',
         `process_start_time_seconds ${Math.floor(Date.now() / 1000) - Math.floor(process.uptime())}`,
-        ''
+        '',
       ].join('\n');
 
       res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
@@ -150,7 +160,7 @@ export function createApp(): express.Application {
   logInfo('Express application configured successfully', {
     event: 'app_configured',
     corsOrigins: corsOrigins.length,
-    debugRoutes: process.env.ENABLE_DEBUG_ROUTES === 'true'
+    debugRoutes: process.env.ENABLE_DEBUG_ROUTES === 'true',
   });
 
   return app;

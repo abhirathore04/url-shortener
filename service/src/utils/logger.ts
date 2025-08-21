@@ -12,8 +12,8 @@ const createTransport = () => {
       options: {
         colorize: true,
         translateTime: 'HH:MM:ss Z',
-        ignore: 'pid,hostname'
-      }
+        ignore: 'pid,hostname',
+      },
     };
   }
   return undefined;
@@ -22,8 +22,8 @@ const createTransport = () => {
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
   ...(process.env.NODE_ENV === 'development' && {
-    transport: createTransport()
-  })
+    transport: createTransport(),
+  }),
 });
 
 export default logger;
@@ -36,8 +36,10 @@ export const logApiRequest = (
   context?: any
 ) => {
   const level = statusCode >= 500 ? 'error' : statusCode >= 400 ? 'warn' : 'info';
-  logger[level]({ method, path, statusCode, duration, ...context },
-    `${method} ${path} - ${statusCode} (${duration}ms)`);
+  logger[level](
+    { method, path, statusCode, duration, ...context },
+    `${method} ${path} - ${statusCode} (${duration}ms)`
+  );
 };
 
 export const logError = (error: Error, context?: any) => {

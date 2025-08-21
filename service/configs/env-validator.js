@@ -11,20 +11,20 @@ const requiredVars = [
   'REDIS_URL',
   'JWT_SECRET',
   'OTEL_SERVICE_NAME',
-  'OTEL_EXPORTER_OTLP_ENDPOINT'
+  'OTEL_EXPORTER_OTLP_ENDPOINT',
 ];
 
 const optionalVars = {
-  'MONGO_MAX_POOL_SIZE': '10',
-  'REDIS_MAX_CONNECTIONS': '10',
-  'RATE_LIMIT_WINDOW_MS': '900000',
-  'RATE_LIMIT_MAX_REQUESTS': '100',
-  'CORS_ORIGINS': 'http://localhost:3000',
-  'LOG_FORMAT': 'json',
-  'SHORT_URL_LENGTH': '7',
-  'URL_TTL_DAYS': '365',
-  'MAX_URL_LENGTH': '2048',
-  'ENABLE_DEBUG_ROUTES': 'true'
+  MONGO_MAX_POOL_SIZE: '10',
+  REDIS_MAX_CONNECTIONS: '10',
+  RATE_LIMIT_WINDOW_MS: '900000',
+  RATE_LIMIT_MAX_REQUESTS: '100',
+  CORS_ORIGINS: 'http://localhost:3000',
+  LOG_FORMAT: 'json',
+  SHORT_URL_LENGTH: '7',
+  URL_TTL_DAYS: '365',
+  MAX_URL_LENGTH: '2048',
+  ENABLE_DEBUG_ROUTES: 'true',
 };
 
 function validateEnvironment() {
@@ -48,7 +48,7 @@ function validateEnvironment() {
   // Fail fast if required variables are missing
   if (missing.length > 0) {
     console.error('❌ Missing required environment variables:');
-    missing.forEach(varName => {
+    missing.forEach((varName) => {
       console.error(`   - ${varName}`);
     });
     console.error('\n💡 Copy .env.example to .env and fill in values');

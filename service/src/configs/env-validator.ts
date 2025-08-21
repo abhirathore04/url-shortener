@@ -15,7 +15,7 @@ export function validateEnvironment(): AppConfig {
     CORS_ORIGINS: process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:8080',
     OTEL_SERVICE_VERSION: process.env.OTEL_SERVICE_VERSION || '0.1.0',
     ENABLE_DEBUG_ROUTES: process.env.ENABLE_DEBUG_ROUTES || undefined,
-    ENABLE_METRICS_ENDPOINT: process.env.ENABLE_METRICS_ENDPOINT || undefined
+    ENABLE_METRICS_ENDPOINT: process.env.ENABLE_METRICS_ENDPOINT || undefined,
   };
 
   // Log configuration (without secrets)
@@ -29,8 +29,8 @@ export function validateEnvironment(): AppConfig {
 
   // Validate only critical fields
   const required = ['PORT', 'NODE_ENV'];
-  const missing = required.filter(key => !config[key as keyof AppConfig]);
-  
+  const missing = required.filter((key) => !config[key as keyof AppConfig]);
+
   if (missing.length > 0) {
     console.error(`❌ Missing critical environment variables: ${missing.join(', ')}`);
     process.exit(1);
