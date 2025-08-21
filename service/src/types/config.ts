@@ -41,10 +41,10 @@ export interface AppConfig {
   PORT: string;
   NODE_ENV: string;
   LOG_LEVEL: string;
-  MONGO_URI?: string;
+  MONGO_URI?: string;  // Made optional with ?
   JWT_SECRET: string;
   CORS_ORIGINS: string;
   OTEL_SERVICE_VERSION: string;
-  ENABLE_DEBUG_ROUTES?: string;
-  ENABLE_METRICS_ENDPOINT?: string;
+  ENABLE_DEBUG_ROUTES?: string;  // Made optional with ?
+  ENABLE_METRICS_ENDPOINT?: string;  // Made optional with ?
 }

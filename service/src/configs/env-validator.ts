@@ -10,12 +10,12 @@ export function validateEnvironment(): AppConfig {
     PORT: process.env.PORT || '8080',
     NODE_ENV: process.env.NODE_ENV || 'development',
     LOG_LEVEL: process.env.LOG_LEVEL || 'info',
-    MONGO_URI: process.env.MONGO_URI,
+    MONGO_URI: process.env.MONGO_URI || undefined,
     JWT_SECRET: process.env.JWT_SECRET || 'default-jwt-secret-change-in-production',
     CORS_ORIGINS: process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:8080',
     OTEL_SERVICE_VERSION: process.env.OTEL_SERVICE_VERSION || '0.1.0',
-    ENABLE_DEBUG_ROUTES: process.env.ENABLE_DEBUG_ROUTES,
-    ENABLE_METRICS_ENDPOINT: process.env.ENABLE_METRICS_ENDPOINT
+    ENABLE_DEBUG_ROUTES: process.env.ENABLE_DEBUG_ROUTES || undefined,
+    ENABLE_METRICS_ENDPOINT: process.env.ENABLE_METRICS_ENDPOINT || undefined
   };
 
   // Log configuration (without secrets)
@@ -37,11 +37,8 @@ export function validateEnvironment(): AppConfig {
   }
 
   // Warn about missing optional fields but don't fail
-  const optional = ['MONGO_URI'];
-  const missingOptional = optional.filter(key => !process.env[key]);
-  
-  if (missingOptional.length > 0) {
-    console.warn(`⚠️  Using defaults for: ${missingOptional.join(', ')}`);
+  if (!config.MONGO_URI) {
+    console.warn('⚠️  MONGO_URI not provided, will use default connection');
   }
 
   console.log(`✅ Environment validation passed for ${config.NODE_ENV} environment`);

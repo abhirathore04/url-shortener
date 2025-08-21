@@ -4,11 +4,26 @@
 
 import pino from 'pino';
 
+// Create transport configuration conditionally
+const createTransport = () => {
+  if (process.env.NODE_ENV === 'development') {
+    return {
+      target: 'pino-pretty',
+      options: {
+        colorize: true,
+        translateTime: 'HH:MM:ss Z',
+        ignore: 'pid,hostname'
+      }
+    };
+  }
+  return undefined;
+};
+
 const logger = pino({
   level: process.env.LOG_LEVEL || 'info',
-  transport: process.env.NODE_ENV === 'development'
-    ? { target: 'pino-pretty', options: { colorize: true } }
-    : undefined
+  ...(process.env.NODE_ENV === 'development' && {
+    transport: createTransport()
+  })
 });
 
 export default logger;
