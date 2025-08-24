@@ -58,3 +58,13 @@ temp/
 
 # Local development
 .local
+# Docker environment files
+.env.docker
+docker-compose.override.yml
+*.env.local
+
+# Docker volumes
+mongodb-data/
+redis-data/
+prometheus-data/
+grafana-data/

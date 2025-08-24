@@ -1,0 +1,80 @@
+# =============================================================================
+# Prometheus Configuration for URL Shortener Service  
+# =============================================================================
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'url-shortener-local'
+    environment: 'development'
+
+# Alertmanager configuration (optional)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Rule files for alerting (optional)
+rule_files:
+  # - "alert_rules.yml"
+
+# Scrape configurations
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+    scrape_interval: 30s
+    metrics_path: /metrics
+
+  # URL Shortener API Service
+  - job_name: 'url-shortener'
+    static_configs:
+      - targets: ['url-shortener:8080']
+    scrape_interval: 15s
+    metrics_path: /metrics
+    scrape_timeout: 10s
+    honor_labels: true
+    params:
+      format: ['prometheus']
+
+  # OpenTelemetry Collector
+  - job_name: 'otel-collector'
+    static_configs:
+      - targets: ['otel-collector:8889']
+    scrape_interval: 15s
+    metrics_path: /metrics
+
+  # Node Exporter (system metrics) - if available
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 30s
+    honor_labels: true
+
+  # MongoDB Exporter - if available
+  - job_name: 'mongodb-exporter'
+    static_configs:
+      - targets: ['mongodb-exporter:9216']
+    scrape_interval: 30s
+
+  # Redis Exporter - if available  
+  - job_name: 'redis-exporter'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+
+# Remote write configuration (for long-term storage)
+# remote_write:
+#   - url: "https://your-remote-storage-endpoint/api/v1/write"
+#     basic_auth:
+#       username: "your-username"
+#       password: "your-password"
+
+# Storage configuration
+storage:
+  tsdb:
+    retention.time: 15d
+    retention.size: 10GB

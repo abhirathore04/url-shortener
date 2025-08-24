@@ -1,0 +1,100 @@
+# =============================================================================
+# Memory-Optimized Docker Compose Configuration
+# Production-ready containerized infrastructure
+# =============================================================================
+
+networks:
+  url-shortener-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+    driver: local
+
+services:
+  # URL Shortener API Service
+  url-shortener:
+    build:
+      context: ./service
+      dockerfile: Dockerfile
+    image: url-shortener:0.1.0
+    container_name: url-shortener-api
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+      NODE_ENV: production
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+      
+      # Database Configuration
+      MONGO_URI: mongodb://urlshortener:UrlApp2025!mN4pT8kRbV6sL9wQ1xC4eH7jK0@mongodb:27017/shortener?authSource=shortener
+      MONGO_MAX_POOL_SIZE: 3
+      
+      # Security
+      JWT_SECRET: a1b2c3d4e5f6789012345678901234567890abcdef123456789abcdef0123456789012
+      
+      # CORS
+      CORS_ORIGINS: http://localhost:3000,http://localhost:8080
+      
+      # OpenTelemetry Configuration
+      OTEL_SERVICE_NAME: url-shortener
+      OTEL_SERVICE_VERSION: 0.1.0
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      
+      # Application Features
+      SHORT_URL_LENGTH: 7
+      URL_TTL_DAYS: 365
+      ENABLE_METRICS_ENDPOINT: "true"
+      ENABLE_DEBUG_ROUTES: "false"
+      
+      # Additional Configuration
+      MAX_URL_LENGTH: 2048
+      MIN_URL_LENGTH: 10
+      SHORT_URL_ALPHABET: abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    networks:
+      - url-shortener-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 60s
+      timeout: 10s
+      retries: 2
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 200M
+          cpus: '0.5'
+
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0-jammy
+    container_name: url-shortener-mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: MongoAdmin2025!Kx9pQ7mRvL3nF8wE2zSbT6uY9
+      MONGO_INITDB_DATABASE: shortener
+    volumes:
+      - mongodb-data:/data/db
+      - ./infrastructure/mongodb/init-scripts:/docker-entrypoint-initdb.d:ro
+    networks:
+      - url-shortener-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand('ping').ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+          cpus: '0.8'
+    command: ["mongod", "--bind_ip_all", "--auth", "--wiredTigerCacheSizeGB", "0.25"]

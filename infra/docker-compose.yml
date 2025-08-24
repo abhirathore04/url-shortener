@@ -1,0 +1,172 @@
+version: '3.8'
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  mongodb-data:
+  prometheus-data:
+  grafana-data:
+
+services:
+  # API Service
+  api:
+    build:
+      context: ../service
+      dockerfile: Dockerfile
+    image: url-shortener:latest
+    container_name: url-shortener-api
+    restart: unless-stopped
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      PORT: 8080
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      MONGO_URI: mongodb://${MONGO_USERNAME:-urlshortener}:${MONGO_PASSWORD:-UrlApp2025!mN4pT8kRbV6sL9wQ1xC4eH7jK0}@mongo:27017/shortener?authSource=shortener
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-default-jwt-secret}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      OTEL_SERVICE_NAME: url-shortener
+      OTEL_SERVICE_VERSION: ${SERVICE_VERSION:-0.1.0}
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      ENABLE_METRICS_ENDPOINT: "true"
+    ports:
+      - "${API_PORT:-8080}:8080"
+    depends_on:
+      - mongo
+      - redis
+      - otel-collector
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # MongoDB Database
+  mongo:
+    image: mongo:7.0-jammy
+    container_name: url-shortener-mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-admin}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-MongoAdmin2025!Kx9pQ7mRvL3nF8wE2zSbT6uY9}
+      MONGO_INITDB_DATABASE: shortener
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongodb-data:/data/db
+      - ../infrastructure/mongodb/init-scripts:/docker-entrypoint-initdb.d:ro
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand('ping').ok"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+    command: ["mongod", "--bind_ip_all", "--auth", "--wiredTigerCacheSizeGB", "0.25"]
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: url-shortener-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+
+  # OpenTelemetry Collector
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.103.0
+    container_name: url-shortener-otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8888:8888"   # Prometheus metrics
+    networks:
+      - app-network
+    depends_on:
+      - jaeger
+
+  # Jaeger Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:1.57
+    container_name: url-shortener-jaeger
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Jaeger collector HTTP
+    networks:
+      - app-network
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: url-shortener-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - app-network
+    depends_on:
+      - otel-collector
+
+  # Grafana Dashboards
+  grafana:
+    image: grafana/grafana:10.0.0
+    container_name: url-shortener-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=${GRAFANA_DOMAIN:-localhost}
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+    depends_on:
+      - prometheus
+
+  # Alertmanager (Optional)
+  alertmanager:
+    image: prom/alertmanager:v0.25.0
+    container_name: url-shortener-alertmanager
+    volumes:
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    ports:
+      - "9093:9093"
+    networks:
+      - app-network
+    profiles:
+      - monitoring

@@ -1,0 +1,18 @@
+# =============================================================================
+# Grafana Dashboards Configuration
+# =============================================================================
+
+apiVersion: 1
+
+providers:
+  # URL Shortener dashboards
+  - name: 'url-shortener'
+    orgId: 1
+    folder: 'URL Shortener'
+    type: file
+    disableDeletion: false
+    editable: true
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards

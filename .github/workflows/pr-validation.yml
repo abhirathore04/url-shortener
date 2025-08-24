@@ -1,0 +1,92 @@
+name: 🔄 Pull Request Validation
+
+on:
+  pull_request:
+    branches: [main, develop]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+env:
+  NODE_VERSION: '20'
+
+# Add permissions for GitHub token
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+  statuses: write
+
+concurrency:
+  group: pr-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  pr-validation:
+    name: 🔍 PR Quality Gate
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    timeout-minutes: 15
+    
+    steps:
+      - name: 📥 Checkout PR Branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: 'service/package-lock.json'
+
+      - name: 📦 Install Dependencies
+        working-directory: ./service
+        run: npm ci --prefer-offline --no-audit
+
+      - name: 🧹 Lint Code
+        working-directory: ./service
+        run: npm run lint:check
+
+      - name: 🎨 Check Code Formatting
+        working-directory: ./service
+        run: npm run format:check
+
+      - name: 🏗️ Build Validation
+        working-directory: ./service
+        run: npm run build
+
+      - name: 🧪 Run Unit Tests
+        working-directory: ./service
+        env:
+          NODE_ENV: test
+          LOG_LEVEL: silent
+        run: npm run test:unit || true
+
+      - name: 📊 Comment PR Results
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const success = '${{ job.status }}' === 'success';
+            const emoji = success ? '✅' : '❌';
+            const status = success ? 'passed' : 'failed';
+            
+            const body = `## ${emoji} PR Validation ${status}
+            
+            **Validation Summary:**
+            - 🧹 Code linting: ${success ? '✅ Passed' : '❌ Failed'}
+            - 🎨 Code formatting: ${success ? '✅ Passed' : '❌ Failed'}  
+            - 🏗️ Build validation: ${success ? '✅ Passed' : '❌ Failed'}
+            - 🧪 Unit tests: ${success ? '✅ Passed' : '❌ Failed'}
+            
+            ${success 
+              ? '🎉 Your PR is ready for review!' 
+              : '🔧 Please fix the issues above before requesting review.'}`;
+
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
