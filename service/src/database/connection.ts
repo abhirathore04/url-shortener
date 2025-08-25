@@ -1,17 +1,19 @@
 /**
  * Database Connection Manager
- * Learning: Database connections, connection pooling, error handling
+ * Learning: Singleton pattern for database connections
  */
 
-import { Database, open } from 'sqlite';
 import sqlite3 from 'sqlite3';
-
+import { open, Database } from 'sqlite';
 import { CREATE_URL_TABLE } from '../models/url.model';
 import { logInfo, logError } from '../utils/logger';
+import path from 'path';
+import fs from 'fs';
 
 export class DatabaseManager {
   private static instance: DatabaseManager;
   private db: Database | null = null;
+  private isConnected = false;
 
   private constructor() {}
 
@@ -22,51 +24,61 @@ export class DatabaseManager {
     return DatabaseManager.instance;
   }
 
-  async connect(): Promise<void> {
+  public async connect(): Promise<void> {
+    if (this.isConnected && this.db) {
+      return;
+    }
+
     try {
+      // Ensure data directory exists
+      const dataDir = path.dirname(process.env.DB_PATH || './data/shortener.db');
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+
+      // Connect to SQLite database
       this.db = await open({
         filename: process.env.DB_PATH || './data/shortener.db',
-        driver: sqlite3.Database,
+        driver: sqlite3.Database
       });
 
-      // Initialize tables
+      // Enable foreign key constraints
+      await this.db.exec('PRAGMA foreign_keys = ON;');
+      
+      // Create tables
       await this.db.exec(CREATE_URL_TABLE);
 
+      this.isConnected = true;
+      
       logInfo('Database connected successfully', {
-        event: 'db_connected',
         path: process.env.DB_PATH || './data/shortener.db',
+        event: 'database_connected'
       });
+
     } catch (error) {
-      logError(error as Error, {
-        event: 'db_connection_failed',
-      });
-      throw error;
+      this.isConnected = false;
+      logError(error as Error, { event: 'database_connection_failed' });
+      throw new Error(`Failed to connect to database: ${(error as Error).message}`);
     }
   }
 
-  getDatabase(): Database {
-    if (!this.db) {
+  public getDatabase(): Database {
+    if (!this.isConnected || !this.db) {
       throw new Error('Database not connected. Call connect() first.');
     }
     return this.db;
   }
 
-  async close(): Promise<void> {
+  public async close(): Promise<void> {
     if (this.db) {
       await this.db.close();
       this.db = null;
-      logInfo('Database connection closed');
+      this.isConnected = false;
+      logInfo('Database connection closed', { event: 'database_disconnected' });
     }
   }
 
-  // Add this missing method
-  async healthCheck(): Promise<boolean> {
-    try {
-      if (!this.db) return false;
-      await this.db.get('SELECT 1');
-      return true;
-    } catch {
-      return false;
-    }
+  public isConnectionActive(): boolean {
+    return this.isConnected && this.db !== null;
   }
 }

@@ -1,171 +1,204 @@
 /**
- * Application entry point
- * Handles startup, configuration loading, graceful shutdown, and error handling
+ * Server Entry Point with Database Initialization
+ * Learning: Production-ready server startup with database connection
  */
-import { Server } from 'http';
 
 import dotenv from 'dotenv';
-
+import http from 'http';
 import { createApp } from './app';
-import { validateEnvironment } from './configs/env-validator';
-import { logStartup, logShutdown, logError, logInfo } from './utils/logger';
+import { logInfo, logError, logStartup } from './utils/logger';
+import { DatabaseManager } from './database/connection';
+import express from 'express';
 
-// Global error handlers for uncaught exceptions
-const setupGlobalErrorHandlers = () => {
-  process.on('unhandledRejection', (reason, promise) => {
-    logError(new Error('Unhandled Rejection'), {
-      event: 'unhandled_rejection',
-      reason: reason instanceof Error ? reason.message : String(reason),
-      promise: String(promise),
-    });
-    process.exit(1);
-  });
+// Load environment variables first
+dotenv.config();
 
-  process.on('uncaughtException', (error) => {
-    logError(error, {
-      event: 'uncaught_exception',
-    });
-    process.exit(1);
-  });
-};
+class Server {
+  private server: http.Server;
+  private app: express.Application;
+  private port: number;
+  private isShuttingDown = false;
+  private dbManager: DatabaseManager;
 
-// Graceful shutdown handling
-const setupGracefulShutdown = (server: Server) => {
-  const gracefulShutdown = (signal: string) => {
-    logShutdown(signal);
+  constructor() {
+    this.port = parseInt(process.env.PORT || '3000', 10);
+    this.app = createApp();
+    this.server = http.createServer(this.app);
+    this.dbManager = DatabaseManager.getInstance();
+    
+    this.setupGracefulShutdown();
+  }
 
-    server.close((err: Error | undefined) => {
-      if (err) {
-        logError(err, {
-          event: 'shutdown_error',
+  public async start(): Promise<void> {
+    try {
+      // ✅ INITIALIZE DATABASE FIRST
+      logInfo('Initializing database connection...');
+      await this.dbManager.connect();
+      logInfo('Database initialized successfully');
+
+      return new Promise((resolve, reject) => {
+        this.server.listen(this.port, (error?: Error) => {
+          if (error) {
+            logError(error, { event: 'server_start_failed', port: this.port });
+            return reject(error);
+          }
+
+          const environment = process.env.NODE_ENV || 'development';
+          const version = process.env.npm_package_version || '1.0.0';
+
+          logStartup(this.port, environment, version);
+
+          console.log(`
+🚀 URL Shortener API Server Started Successfully!
+
+📍 Server Details:
+   • Port: ${this.port}
+   • Environment: ${environment}
+   • Version: ${version}
+   • Process ID: ${process.pid}
+   • Base URL: ${process.env.BASE_URL || `http://localhost:${this.port}`}
+
+💾 Database:
+   • Status: Connected ✅
+   • Path: ${process.env.DB_PATH || './data/shortener.db'}
+   • Type: SQLite
+
+🔗 API Endpoints:
+   • POST /api/v1/urls              - Create short URL
+   • GET  /:shortCode               - Redirect to original URL
+   • GET  /api/v1/urls/:shortCode/analytics - Get analytics
+   • DELETE /api/v1/urls/:shortCode - Delete URL
+   • GET  /health                   - Health check
+
+📊 Ready to handle millions of URL shortening requests!
+          `);
+
+          resolve();
         });
-        process.exit(1);
-      }
 
-      logInfo('✅ Server closed successfully', {
-        event: 'server_closed',
+        // Handle server errors
+        this.server.on('error', (error: NodeJS.ErrnoException) => {
+          if (error.code === 'EADDRINUSE') {
+            logError(new Error(`Port ${this.port} is already in use`), { 
+              event: 'port_in_use', 
+              port: this.port 
+            });
+          } else {
+            logError(error, { event: 'server_error' });
+          }
+          reject(error);
+        });
       });
-      process.exit(0);
+
+    } catch (error) {
+      logError(error as Error, { event: 'startup_failed' });
+      throw error;
+    }
+  }
+
+  private setupGracefulShutdown(): void {
+    const signals = ['SIGTERM', 'SIGINT', 'SIGUSR2'] as const;
+    
+    signals.forEach((signal) => {
+      process.on(signal, () => {
+        if (this.isShuttingDown) {
+          logInfo(`${signal} received again, forcing shutdown...`);
+          process.exit(1);
+        }
+
+        this.isShuttingDown = true;
+        logInfo(`${signal} signal received, initiating graceful shutdown...`);
+        this.shutdown(signal);
+      });
     });
 
-    // Force shutdown after timeout
-    const shutdownTimeout = setTimeout(() => {
-      logError(new Error('❌ Forced shutdown after 30 seconds timeout'), {
+    process.on('uncaughtException', (error: Error) => {
+      logError(error, { event: 'uncaught_exception' });
+      console.error('Uncaught Exception:', error);
+      this.shutdown('uncaughtException', 1);
+    });
+
+    process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
+      const error = new Error(`Unhandled Rejection: ${reason}`);
+      logError(error, { event: 'unhandled_rejection', promise: promise.toString() });
+      console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+      this.shutdown('unhandledRejection', 1);
+    });
+  }
+
+  private async shutdown(signal: string, exitCode = 0): Promise<void> {
+    const shutdownTimeout = parseInt(process.env.SHUTDOWN_TIMEOUT || '10000', 10);
+    
+    logInfo(`Shutting down server due to ${signal}...`, {
+      event: 'shutdown_initiated',
+      signal,
+      timeout: shutdownTimeout
+    });
+
+    const forceShutdownTimer = setTimeout(() => {
+      logError(new Error('Forced shutdown due to timeout'), {
         event: 'forced_shutdown',
+        timeout: shutdownTimeout
       });
       process.exit(1);
-    }, 30000);
+    }, shutdownTimeout);
 
-    shutdownTimeout.unref();
-  };
+    try {
+      // ✅ CLOSE DATABASE CONNECTION GRACEFULLY
+      await this.dbManager.close();
+      
+      // Close HTTP server
+      this.server.close((error) => {
+        clearTimeout(forceShutdownTimer);
 
-  // Handle different shutdown signals
-  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
-  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-  process.on('SIGUSR2', () => gracefulShutdown('SIGUSR2'));
-};
-
-// Main startup function
-const startServer = async (): Promise<Server> => {
-  try {
-    // Load environment variables in non-production
-    if (process.env.NODE_ENV !== 'production') {
-      try {
-        dotenv.config();
-        // eslint-disable-next-line no-console
-        console.log('✅ .env file loaded');
-      } catch (error) {
-        // eslint-disable-next-line no-console
-        console.log('⚠️ .env file not found, using environment variables from container');
-      }
-    }
-
-    // 1. Validate environment configuration
-    const config = validateEnvironment();
-
-    // 2. Create Express application
-    const app = createApp();
-
-    // 3. Start HTTP server
-    const port = parseInt(config.PORT, 10);
-
-    const server = app.listen(port, '0.0.0.0', () => {
-      logStartup(port, config.NODE_ENV, config.OTEL_SERVICE_VERSION);
-
-      // Log available endpoints
-      logInfo('📡 Service endpoints available', {
-        event: 'endpoints_ready',
-        endpoints: [
-          `http://localhost:${port}/`,
-          `http://localhost:${port}/health`,
-          `http://localhost:${port}/health/ready`,
-          `http://localhost:${port}/health/live`,
-          ...(config.ENABLE_METRICS_ENDPOINT === 'true'
-            ? [`http://localhost:${port}/metrics`]
-            : []),
-        ],
+        if (error) {
+          logError(error, { event: 'shutdown_error' });
+          process.exit(1);
+        } else {
+          logInfo('Server and database closed successfully', { event: 'shutdown_complete' });
+          process.exit(exitCode);
+        }
       });
-    });
 
-    // 4. Set up graceful shutdown
-    setupGracefulShutdown(server);
-
-    // 5. Handle server errors
-    server.on('error', (error: NodeJS.ErrnoException) => {
-      if (error.syscall !== 'listen') {
-        throw error;
-      }
-
-      const bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
-
-      switch (error.code) {
-        case 'EACCES':
-          logError(new Error(`${bind} requires elevated privileges`));
-          process.exit(1);
-          break;
-        case 'EADDRINUSE':
-          logError(new Error(`${bind} is already in use`));
-          process.exit(1);
-          break;
-        default:
-          throw error;
-      }
-    });
-
-    return server;
-  } catch (error) {
-    logError(error as Error, {
-      event: 'startup_failed',
-    });
-    process.exit(1);
+    } catch (error) {
+      clearTimeout(forceShutdownTimer);
+      logError(error as Error, { event: 'shutdown_error' });
+      process.exit(1);
+    }
   }
-};
 
-// Initialize application
-const main = async () => {
-  try {
-    // eslint-disable-next-line no-console
-    console.log('🚀 Starting URL Shortener server...');
-
-    setupGlobalErrorHandlers();
-    await startServer();
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.error('❌ Critical startup error:', error);
-    logError(error as Error, {
-      event: 'startup_error',
-    });
-    process.exit(1);
+  public getServer(): http.Server {
+    return this.server;
   }
-};
 
-// Start the server if this file is run directly
-if (require.main === module) {
-  main().catch((error) => {
-    // eslint-disable-next-line no-console
-    console.error('❌ Application failed to start:', error);
-    process.exit(1);
-  });
+  public getApp(): express.Application {
+    return this.app;
+  }
 }
 
-export { startServer, main };
+// Start the server
+async function startServer(): Promise<void> {
+  try {
+    const server = new Server();
+    await server.start();
+
+    logInfo('Application startup completed successfully', {
+      event: 'application_ready',
+      pid: process.pid,
+      nodeVersion: process.version,
+      platform: process.platform
+    });
+
+  } catch (error) {
+    logError(error as Error, { event: 'startup_failed' });
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+if (require.main === module) {
+  startServer();
+}
+
+export { Server };
+export default Server;
