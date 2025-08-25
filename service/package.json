@@ -15,6 +15,7 @@
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json,md}\"",
     "test": "jest",
+    "test:database": "ts-node src/database/test-connection.ts",
     "test:unit": "jest --testMatch='**/tests/unit/**/*.test.ts' --coverage --coverageDirectory=coverage/unit",
     "test:integration": "jest --testMatch='**/tests/integration/**/*.test.ts' --coverage --coverageDirectory=coverage/integration --runInBand",
     "test:e2e": "jest --testMatch='**/tests/e2e/**/*.test.ts' --runInBand --detectOpenHandles",
@@ -45,13 +46,15 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^7.1.5",
     "helmet": "^8.0.0",
     "ioredis": "^5.3.2",
     "mongodb": "^6.3.0",
     "pino": "^9.5.0",
     "pino-pretty": "^13.0.0",
     "prometheus-api-metrics": "^3.2.2",
-    "express-rate-limit": "^7.1.5"
+    "sqlite": "^5.1.1",
+    "sqlite3": "^5.1.7"
   },
   "devDependencies": {
     "@types/compression": "^1.8.1",
@@ -59,6 +62,7 @@
     "@types/express": "^5.0.0",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.17.10",
+    "@types/sqlite3": "^3.1.11",
     "@types/supertest": "^6.0.2",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",

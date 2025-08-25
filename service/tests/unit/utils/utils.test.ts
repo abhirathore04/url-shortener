@@ -1,7 +1,7 @@
 /**
  * Unit tests for utility functions
  */
-import { validateUrl, generateShortCode, sanitizeInput } from '../../src/utils/helpers';
+import { validateUrl, generateShortCode, sanitizeInput } from '../../../src/utils/helpers';
 
 describe('URL Validation Utility', () => {
   describe('validateUrl', () => {
