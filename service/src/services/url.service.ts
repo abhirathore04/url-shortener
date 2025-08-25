@@ -10,9 +10,9 @@ import {
   ShortenUrlResponse,
   UrlAnalytics,
 } from '../models/url.model';
+import { logInfo, logError } from '../utils/logger';
 
 import { EncodingService } from './encoding.service';
-import { logInfo, logError } from '../utils/logger';
 
 export class UrlService {
   private db = DatabaseManager.getInstance().getDatabase();

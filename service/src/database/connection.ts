@@ -3,8 +3,8 @@
  * Learning: Database connections, connection pooling, error handling
  */
 
-import sqlite3 from 'sqlite3';
 import { Database, open } from 'sqlite';
+import sqlite3 from 'sqlite3';
 
 import { CREATE_URL_TABLE } from '../models/url.model';
 import { logInfo, logError } from '../utils/logger';
