@@ -3,12 +3,14 @@
  * Learning: Singleton pattern for database connections
  */
 
-import sqlite3 from 'sqlite3';
-import { open, Database } from 'sqlite';
-import { CREATE_URL_TABLE } from '../models/url.model';
-import { logInfo, logError } from '../utils/logger';
-import path from 'path';
 import fs from 'fs';
+import path from 'path';
+
+import { Database, open } from 'sqlite';
+import sqlite3 from 'sqlite3';
+
+import { CREATE_URL_TABLE } from '../models/url.model';
+import { logError, logInfo } from '../utils/logger';
 
 export class DatabaseManager {
   private static instance: DatabaseManager;

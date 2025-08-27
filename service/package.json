@@ -18,11 +18,12 @@
     "test:database": "ts-node src/database/test-connection.ts",
     "test:unit": "jest --testMatch='**/tests/unit/**/*.test.ts' --coverage --coverageDirectory=coverage/unit",
     "test:integration": "jest --testMatch='**/tests/integration/**/*.test.ts' --coverage --coverageDirectory=coverage/integration --runInBand",
+    "test:all": "npm run test:unit && npm run test:integration",
     "test:api": "jest --testMatch='**/tests/integration/**/*.test.ts' --runInBand --verbose",
     "test:e2e": "jest --testMatch='**/tests/e2e/**/*.test.ts' --runInBand --detectOpenHandles",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage && open-cli coverage/lcov-report/index.html",
-    "test:ci": "jest --ci --coverage --coverageReporters=text-lcov --passWithNoTests",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --coverageReporters=text-lcov --passWithNoTests --runInBand",
     "api:start": "npm run build && npm start",
     "api:dev": "npm run dev",
     "api:test": "npm run test:api",
@@ -33,11 +34,18 @@
     "security:audit": "npm audit --audit-level high",
     "security:fix": "npm audit fix",
     "deps:update": "npm-check-updates -u && npm install",
-    "deps:check": "npm-check-updates --doctor"
+    "deps:check": "npm-check-updates --doctor",
+    "perf:load": "artillery run performance-tests/load-test.yml",
+    "perf:benchmark": "node performance-tests/benchmark.js",
+    "perf:all": "npm run perf:benchmark && npm run perf:load",
+    "docs:serve": "npm run build && npm start",
+    "docs:generate": "node -e \"console.log('API docs available at: http://localhost:3000/api/docs')\"",
+    "validate": "npm run lint:check && npm run type-check && npm run test:ci",
+    "build:prod": "npm run validate && npm run build"
   },
   "keywords": [
     "url",
-    "shortener",
+    "shortener", 
     "api",
     "typescript",
     "express",
@@ -47,34 +55,41 @@
   "author": "Your Name",
   "license": "MIT",
   "dependencies": {
-    "compression": "^1.7.4",
+    "compression": "^1.8.1",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.7",
+    "dotenv": "^16.6.1",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.1",
-    "helmet": "^8.0.0",
-    "pino": "^9.5.0",
-    "pino-pretty": "^13.0.0",
+    "helmet": "^8.1.0",
+    "pino": "^9.9.0",
+    "pino-pretty": "^13.1.1",
     "sqlite": "^5.1.1",
     "sqlite3": "^5.1.7",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "@types/compression": "^1.8.1",
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.17.10",
     "@types/sqlite3": "^3.1.11",
     "@types/supertest": "^6.0.3",
+    "@types/swagger-jsdoc": "^6.0.4",
+    "@types/swagger-ui-express": "^4.1.8",
     "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
+    "artillery": "^2.0.21",
+    "autocannon": "^8.0.0",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.31.0",
     "eslint-plugin-security": "^1.7.1",
     "jest": "^29.7.0",
+    "jest-extended": "^6.0.0",
     "jest-junit": "^16.0.0",
     "nodemon": "^3.1.9",
     "npm-check-updates": "^16.14.12",
@@ -82,9 +97,11 @@
     "prettier": "^3.4.2",
     "rimraf": "^6.0.1",
     "supertest": "^7.1.4",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "ts-jest": "^29.1.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.3.3"
   },
   "jest": {
     "preset": "ts-jest",
@@ -111,16 +128,20 @@
     ],
     "coverageThreshold": {
       "global": {
-        "branches": 70,
-        "functions": 70,
-        "lines": 70,
-        "statements": 70
+        "branches": 80,
+        "functions": 80,
+        "lines": 80,
+        "statements": 80
       }
     },
     "setupFilesAfterEnv": [
       "<rootDir>/tests/setup.ts"
     ],
-    "testTimeout": 30000
+    "globalTeardown": "<rootDir>/tests/teardown.js",
+    "testTimeout": 30000,
+    "verbose": true,
+    "detectOpenHandles": true,
+    "forceExit": true
   },
   "engines": {
     "node": ">=20.0.0",

@@ -1,25 +1,21 @@
 /**
- * Express Application Configuration
- * Learning: Modular Express app setup with comprehensive middleware
+ * Express Application Configuration with Swagger Documentation
+ * Learning: Modular Express app setup with API documentation
  */
 
-import express from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
 import compression from 'compression';
+import cors from 'cors';
+import express from 'express';
+import helmet from 'helmet';
 import { v4 as uuidv4 } from 'uuid';
 
-// Import middleware
+import { setupSwagger } from './docs/api/swagger.config';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { createRateLimiter } from './middleware/rateLimiter';
-
-// Import routes
-import urlRoutes from './routes/urlRoutes';
-import redirectRoutes from './routes/redirectRoutes';
 import healthRoutes from './routes/health';
-
-// Import utilities
-import { logInfo, logError } from './utils/logger';
+import redirectRoutes from './routes/redirectRoutes';
+import urlRoutes from './routes/urlRoutes';
+import { logInfo } from './utils/logger';
 
 export function createApp(): express.Application {
   const app = express();
@@ -142,6 +138,9 @@ export function createApp(): express.Application {
   // Rate limiting
   app.use(createRateLimiter);
 
+  // Setup API Documentation
+  setupSwagger(app);
+
   // Health check routes
   app.use('/health', healthRoutes);
 
@@ -171,6 +170,7 @@ export function createApp(): express.Application {
           ready: '/health/ready',
           live: '/health/live',
           api: '/api/v1/urls',
+          documentation: '/api/docs',
           metrics: '/metrics',
         },
       },
@@ -232,7 +232,8 @@ export function createApp(): express.Application {
     corsOrigins: corsOrigins.length,
     environment: process.env.NODE_ENV,
     metricsEnabled: process.env.ENABLE_METRICS_ENDPOINT === 'true',
-    debugMode: process.env.LOG_LEVEL === 'debug'
+    debugMode: process.env.LOG_LEVEL === 'debug',
+    documentationEnabled: true
   });
 
   return app;

@@ -16,22 +16,36 @@ export function validateUrl(url: string): boolean {
 }
 
 /**
- * Sanitize string input
+ * Generate random short code
  */
-export function sanitizeString(input: string): string {
-  return input.trim().replace(/[<>\"'&]/g, '');
-}
-
-/**
- * Generate random string
- */
-export function generateRandomString(length: number): string {
+export function generateShortCode(length: number = 6): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  
+  if (length <= 0) {
+    throw new Error('Length must be greater than 0');
+  }
+  
   let result = '';
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
   return result;
+}
+
+/**
+ * Sanitize string input
+ */
+export function sanitizeInput(input: string): string {
+  if (!input || typeof input !== 'string') {
+    return '';
+  }
+  
+  return input
+    .trim()
+    .replace(/[<>"'&]/g, '') // Remove dangerous HTML characters ✅ FIXED: Unescaped
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/data:/gi, '') // Remove data: protocol
+    .substring(0, 1000); // Limit length
 }
 
 /**
@@ -53,4 +67,16 @@ export function formatDateToISO(date: Date | string | null | undefined): string 
   } catch {
     return undefined;
   }
+}
+
+/**
+ * Generate random alphanumeric string
+ */
+export function generateRandomString(length: number): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }

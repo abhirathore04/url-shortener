@@ -3,20 +3,21 @@
  * Learning: Centralized error handling for consistent API responses
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { NextFunction, Request, Response } from 'express';
+
 import { logError } from '../utils/logger';
 
 export interface ApiError extends Error {
   statusCode?: number;
   code?: string;
-  details?: any;
+  details?: unknown;
 }
 
 export const errorHandler = (
   err: ApiError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) => {
   // Log the error for debugging
   logError(err, {
@@ -65,7 +66,7 @@ export const errorHandler = (
   });
 };
 
-export const notFoundHandler = (req: Request, res: Response, next: NextFunction) => {
+export const notFoundHandler = (req: Request, res: Response, _next: NextFunction) => {
   res.status(404).json({
     success: false,
     message: 'Endpoint not found',

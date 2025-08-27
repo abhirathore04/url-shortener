@@ -4,6 +4,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
+
 import { validateUrl } from '../utils/helpers';
 
 interface ValidationError {

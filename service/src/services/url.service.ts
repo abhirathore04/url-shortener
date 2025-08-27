@@ -4,9 +4,10 @@
  */
 
 import { DatabaseManager } from '../database/connection';
+import { ShortenUrlRequest, ShortenUrlResponse, UrlAnalytics } from '../models/url.model';
 import { EncodingService } from './encoding.service';
-import { URLRecord, ShortenUrlRequest, ShortenUrlResponse, UrlAnalytics } from '../models/url.model';
-import { logInfo, logError } from '../utils/logger';
+import { validateUrl } from '../utils/helpers';
+import { logError, logInfo } from '../utils/logger';
 
 interface ClickTrackingData {
   userAgent?: string;
@@ -24,6 +25,11 @@ export class UrlService {
   }
 
   async shortenUrl(request: ShortenUrlRequest): Promise<ShortenUrlResponse> {
+    // Validate URL first - before any database operations
+    if (!validateUrl(request.originalUrl)) {
+      throw new Error('Invalid URL provided');
+    }
+
     const db = this.dbManager.getDatabase();
     
     try {
@@ -37,12 +43,24 @@ export class UrlService {
         return {
           id: existingUrl.id,
           shortCode: existingUrl.short_code,
-          shortUrl: `${process.env.BASE_URL}/${existingUrl.short_code}`,
+          shortUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/${existingUrl.short_code}`,
           originalUrl: existingUrl.original_url,
           customAlias: existingUrl.custom_alias,
           createdAt: new Date(existingUrl.created_at).toISOString(),
           expiresAt: existingUrl.expires_at ? new Date(existingUrl.expires_at).toISOString() : undefined
         };
+      }
+
+      // Check if custom alias is taken
+      if (request.customAlias) {
+        const existingAlias = await db.get(
+          'SELECT id FROM urls WHERE (short_code = ? OR custom_alias = ?) AND is_active = 1',
+          [request.customAlias, request.customAlias]
+        );
+        
+        if (existingAlias) {
+          throw new Error('Custom alias already taken');
+        }
       }
 
       // Generate new short code with collision detection
@@ -90,11 +108,10 @@ export class UrlService {
       return {
         id: result.lastID!,
         shortCode,
-        shortUrl: `${process.env.BASE_URL}/${shortCode}`,
+        shortUrl: `${process.env.BASE_URL || 'http://localhost:3000'}/${shortCode}`,
         originalUrl: request.originalUrl,
         customAlias: request.customAlias,
         createdAt: new Date().toISOString(),
-        // ✅ FIXED: Convert Date to string if needed
         expiresAt: request.expiresAt 
           ? (request.expiresAt instanceof Date 
               ? request.expiresAt.toISOString() 

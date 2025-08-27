@@ -4,6 +4,7 @@
  */
 
 import { Request, Response, NextFunction } from 'express';
+
 import { UrlService } from '../services/url.service';
 import { CreateUrlRequest } from '../types/api/requests';
 import { CreateUrlResponse, UrlAnalyticsResponse } from '../types/api/responses';
