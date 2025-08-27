@@ -86,7 +86,7 @@ export function createApp(): express.Application {
     limit: '10mb',
     type: ['application/json', 'text/plain'],
   }));
-
+  
   app.use(express.urlencoded({
     extended: true,
     limit: '10mb',
@@ -103,10 +103,8 @@ export function createApp(): express.Application {
   // Request logging middleware
   app.use((req, res, next) => {
     const start = Date.now();
-    
     res.on('finish', () => {
       const duration = Date.now() - start;
-      
       logInfo(`${req.method} ${req.path} - ${res.statusCode} (${duration}ms)`, {
         method: req.method,
         path: req.path,
@@ -118,7 +116,6 @@ export function createApp(): express.Application {
         contentLength: res.get('Content-Length')
       });
     });
-
     next();
   });
 
@@ -186,7 +183,6 @@ export function createApp(): express.Application {
     app.get('/metrics', (req, res) => {
       const cpuUsage = process.cpuUsage();
       const memoryUsage = process.memoryUsage();
-      
       const metrics = [
         '# HELP nodejs_version_info Node.js version info',
         '# TYPE nodejs_version_info gauge',

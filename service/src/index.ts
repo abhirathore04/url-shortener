@@ -4,18 +4,20 @@
  */
 
 import http from 'http';
+
 import dotenv from 'dotenv';
 import express from 'express';
+
 import { createApp } from './app';
 import { DatabaseManager } from './database/connection';
-import { logInfo, logError, logStartup } from './utils/logger';
+import { logError, logInfo, logStartup } from './utils/logger';
 
 // Load environment variables first
 dotenv.config();
 
 class Server {
   private server: http.Server;
-  public app: express.Application; // ✅ FIXED: Changed from private to public
+  public app: express.Application;
   private port: number;
   private isShuttingDown = false;
   private dbManager: DatabaseManager;
@@ -47,7 +49,8 @@ class Server {
 
           logStartup(this.port, environment, version);
 
-          console.log(`
+          // eslint-disable-next-line no-console
+          console.info(`
 🚀 URL Shortener API Server Started Successfully!
 
 📍 Server Details:
@@ -112,13 +115,15 @@ class Server {
 
     process.on('uncaughtException', (error: Error) => {
       logError(error, { event: 'uncaught_exception' });
+      // eslint-disable-next-line no-console
       console.error('Uncaught Exception:', error);
       this.shutdown('uncaughtException', 1);
     });
 
-    process.on('unhandledRejection', (reason: unknown, promise: Promise<any>) => {
+    process.on('unhandledRejection', (reason: unknown, promise: Promise<unknown>) => {
       const error = new Error(`Unhandled Rejection: ${reason}`);
       logError(error, { event: 'unhandled_rejection', promise: promise.toString() });
+      // eslint-disable-next-line no-console
       console.error('Unhandled Rejection at:', promise, 'reason:', reason);
       this.shutdown('unhandledRejection', 1);
     });
@@ -185,6 +190,7 @@ async function startServer(): Promise<void> {
     });
   } catch (error) {
     logError(error as Error, { event: 'startup_failed' });
+    // eslint-disable-next-line no-console
     console.error('Failed to start server:', error);
     process.exit(1);
   }

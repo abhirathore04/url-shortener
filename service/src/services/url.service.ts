@@ -3,9 +3,9 @@
  * Learning: Extended business logic for API requirements
  */
 
+import { EncodingService } from './encoding.service';
 import { DatabaseManager } from '../database/connection';
 import { ShortenUrlRequest, ShortenUrlResponse, UrlAnalytics } from '../models/url.model';
-import { EncodingService } from './encoding.service';
 import { validateUrl } from '../utils/helpers';
 import { logError, logInfo } from '../utils/logger';
 

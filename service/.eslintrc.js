@@ -9,7 +9,7 @@ module.exports = {
   plugins: ['@typescript-eslint', 'import', 'security'],
   extends: [
     'eslint:recommended',
-    'plugin:@typescript-eslint/recommended',  // ✅ FIXED: Added 'plugin:' prefix
+    'plugin:@typescript-eslint/recommended',
     'plugin:import/recommended',
     'plugin:import/typescript'
   ],
@@ -26,7 +26,7 @@ module.exports = {
       alphabetize: {
         order: 'asc',
         caseInsensitive: true
-      }  // ✅ FIXED: Added missing closing bracket
+      }
     }],
     
     // TypeScript specific
@@ -36,12 +36,16 @@ module.exports = {
     }],
     '@typescript-eslint/no-explicit-any': 'warn',
     
-    // Security warnings (not errors)
+    // Node.js console statements (allow for server logging)
+    'no-console': ['warn', { 
+      allow: ['info', 'warn', 'error'] 
+    }],
+    
+    // Security warnings (not errors for development)
     'security/detect-non-literal-fs-filename': 'warn',
     'security/detect-object-injection': 'warn',
     
     // General
-    'no-console': 'warn',
     'prefer-const': 'error'
   },
   settings: {
@@ -53,7 +57,7 @@ module.exports = {
       node: {
         extensions: ['.js', '.jsx', '.ts', '.tsx']
       }
-    }  // ✅ FIXED: Added missing closing bracket
+    }
   },
   ignorePatterns: [
     'dist/',
@@ -62,4 +66,4 @@ module.exports = {
     '*.js',
     'eslint.config.*'
   ]
-};  // ✅ FIXED: Added missing closing bracket
+};
