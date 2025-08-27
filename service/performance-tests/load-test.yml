@@ -1,0 +1,23 @@
+config:
+  target: 'http://localhost:3000'
+  phases:
+    - duration: 60
+      arrivalRate: 5
+  defaults:
+    headers:
+      content-type: 'application/json'
+
+scenarios:
+  - name: "Create Short URLs"
+    weight: 60
+    flow:
+      - post:
+          url: "/api/v1/urls"
+          json:
+            url: "https://example.com/test-{{ $randomNumber() }}"
+  
+  - name: "Access Short URLs" 
+    weight: 40
+    flow:
+      - get:
+          url: "/health"

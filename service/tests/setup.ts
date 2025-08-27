@@ -1,32 +1,44 @@
 /**
- * Jest Test Setup
- * Learning: Test environment configuration, global test setup
+ * Global Test Setup
+ * Learning: Configure test environment before all tests run
  */
 
-// Set test environment
-process.env.NODE_ENV = 'test';
-process.env.LOG_LEVEL = 'silent';
-process.env.DB_PATH = ':memory:'; // Use in-memory database for tests
+import { TestDatabaseManager } from './helpers/testDatabase';
+import { DatabaseManager } from '../src/database/connection';
 
-// Increase timeout for integration tests
-jest.setTimeout(30000);
-
-// Optional: Suppress console output during tests
-const originalConsole = global.console;
-global.console = {
-  ...originalConsole,
-  log: jest.fn(), // Mock console.log
-  warn: jest.fn(), // Mock console.warn
-  error: originalConsole.error, // Keep errors visible
-  info: jest.fn(), // Mock console.info
-  debug: jest.fn(), // Mock console.debug
-};
-
-// Global test setup
-beforeAll(() => {
-  // Any global setup before all tests
+// Mock the production database manager for tests
+jest.mock('../src/database/connection', () => {
+  const testDbManager = require('./helpers/testDatabase').TestDatabaseManager.getInstance();
+  
+  return {
+    DatabaseManager: {
+      getInstance: jest.fn(() => ({
+        connect: jest.fn().mockResolvedValue(undefined),
+        getDatabase: jest.fn(() => testDbManager.getDatabase()),
+        close: jest.fn().mockResolvedValue(undefined),
+        isConnectionActive: jest.fn().mockReturnValue(true)
+      }))
+    }
+  };
 });
 
-afterAll(() => {
-  // Any global cleanup after all tests
+beforeAll(async () => {
+  // Set test environment
+  process.env.NODE_ENV = 'test';
+  process.env.DB_PATH = ':memory:';
+  process.env.LOG_LEVEL = 'error'; // Reduce log noise in tests
+  
+  // Initialize test database
+  const testDb = TestDatabaseManager.getInstance();
+  await testDb.connect();
+  
+  console.log('🧪 Test environment initialized');
+});
+
+afterAll(async () => {
+  // Cleanup test database
+  const testDb = TestDatabaseManager.getInstance();
+  await testDb.close();
+  
+  console.log('🧹 Test environment cleaned up');
 });

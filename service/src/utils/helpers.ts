@@ -1,17 +1,14 @@
 /**
  * Utility Helper Functions
- * Learning: Input validation, sanitization, string manipulation
+ * Learning: Reusable validation and utility functions
  */
 
 /**
- * Validate URL format and security
+ * Validate URL format
  */
 export function validateUrl(url: string): boolean {
-  if (!url || typeof url !== 'string') return false;
-
   try {
-    const trimmedUrl = url.trim();
-    const urlObj = new URL(trimmedUrl);
+    const urlObj = new URL(url);
     return ['http:', 'https:'].includes(urlObj.protocol);
   } catch {
     return false;
@@ -22,42 +19,64 @@ export function validateUrl(url: string): boolean {
  * Generate random short code
  */
 export function generateShortCode(length: number = 6): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
   if (length <= 0) {
     throw new Error('Length must be greater than 0');
   }
 
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
   let result = '';
-
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-
   return result;
 }
 
 /**
- * Sanitize user input
+ * Sanitize string input
  */
 export function sanitizeInput(input: string): string {
-  if (!input || typeof input !== 'string') return '';
+  if (!input || typeof input !== 'string') {
+    return '';
+  }
 
-  return (
-    input
-      .trim()
-      // Remove only the tag brackets, keep inner content
-      .replace(/<script[^>]*>/gi, 'script')
-      .replace(/<\/script>/gi, '/script')
-      .replace(/<.*?>/g, '')
-      // Remove dangerous characters EXCEPT quotes
-      .replace(/[<>&]/g, '') // Removed " and ' from this regex
-      .substring(0, 1000)
-  );
+  return input
+    .trim()
+    .replace(/[<>"'&]/g, '') // Remove dangerous HTML characters ✅ FIXED: Unescaped
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/data:/gi, '') // Remove data: protocol
+    .substring(0, 1000); // Limit length
 }
 
 /**
- * Format timestamp for display
+ * Check if string is empty or whitespace
  */
-export function formatTimestamp(date: Date): string {
-  return date.toISOString().replace('T', ' ').substring(0, 19);
+export function isEmpty(str: string | undefined | null): boolean {
+  return !str || str.trim().length === 0;
+}
+
+/**
+ * Format date to ISO string safely
+ */
+export function formatDateToISO(date: Date | string | null | undefined): string | undefined {
+  if (!date) return undefined;
+
+  try {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toISOString();
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Generate random alphanumeric string
+ */
+export function generateRandomString(length: number): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
 }

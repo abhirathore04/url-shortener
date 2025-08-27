@@ -5,6 +5,7 @@
 
 import { UrlService } from '../../../src/services/url.service';
 import { DatabaseManager } from '../../../src/database/connection';
+
 // Mock the database manager
 jest.mock('../../../src/database/connection');
 
@@ -25,11 +26,10 @@ describe('UrlService', () => {
       getDatabase: jest.fn().mockReturnValue(mockDb),
       connect: jest.fn(),
       close: jest.fn(),
-      healthCheck: jest.fn(),
+      isConnectionActive: jest.fn(),
     } as any;
 
     (DatabaseManager.getInstance as jest.Mock).mockReturnValue(mockDbManager);
-
     urlService = new UrlService();
   });
 
@@ -41,7 +41,7 @@ describe('UrlService', () => {
     it('should shorten a valid URL', async () => {
       mockDb.get.mockResolvedValueOnce(null); // No existing URL
       mockDb.get.mockResolvedValueOnce(null); // Short code available
-      mockDb.run.mockResolvedValueOnce({ lastID: 1 });
+      mockDb.run.mockResolvedValueOnce({ lastID: 1, changes: 1 });
 
       const request = {
         originalUrl: 'https://example.com'
@@ -59,14 +59,14 @@ describe('UrlService', () => {
         originalUrl: 'not-a-valid-url'
       };
 
+      // Don't mock database calls for invalid URLs since they shouldn't reach the database
       await expect(urlService.shortenUrl(request)).rejects.toThrow('Invalid URL provided');
     });
 
     it('should handle custom aliases', async () => {
       mockDb.get.mockResolvedValueOnce(null); // No existing URL
       mockDb.get.mockResolvedValueOnce(null); // Alias available
-      mockDb.get.mockResolvedValueOnce(null); // Short code available
-      mockDb.run.mockResolvedValueOnce({ lastID: 1 });
+      mockDb.run.mockResolvedValueOnce({ lastID: 1, changes: 1 });
 
       const request = {
         originalUrl: 'https://example.com',
