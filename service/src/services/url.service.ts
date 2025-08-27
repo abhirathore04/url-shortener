@@ -31,7 +31,7 @@ export class UrlService {
     }
 
     const db = this.dbManager.getDatabase();
-    
+
     try {
       // Check for existing URL
       const existingUrl = await db.get(
@@ -47,7 +47,9 @@ export class UrlService {
           originalUrl: existingUrl.original_url,
           customAlias: existingUrl.custom_alias,
           createdAt: new Date(existingUrl.created_at).toISOString(),
-          expiresAt: existingUrl.expires_at ? new Date(existingUrl.expires_at).toISOString() : undefined
+          expiresAt: existingUrl.expires_at
+            ? new Date(existingUrl.expires_at).toISOString()
+            : undefined,
         };
       }
 
@@ -57,7 +59,7 @@ export class UrlService {
           'SELECT id FROM urls WHERE (short_code = ? OR custom_alias = ?) AND is_active = 1',
           [request.customAlias, request.customAlias]
         );
-        
+
         if (existingAlias) {
           throw new Error('Custom alias already taken');
         }
@@ -74,13 +76,13 @@ export class UrlService {
           'SELECT id FROM urls WHERE short_code = ? OR custom_alias = ?',
           [shortCode, shortCode]
         );
-        
+
         if (!existing) break;
-        
+
         if (request.customAlias) {
           throw new Error('Custom alias already taken');
         }
-        
+
         attempts++;
       } while (attempts < maxAttempts);
 
@@ -89,20 +91,23 @@ export class UrlService {
       }
 
       // Insert new URL
-      const result = await db.run(`
+      const result = await db.run(
+        `
         INSERT INTO urls (short_code, original_url, custom_alias, expires_at, created_at, updated_at, is_active)
         VALUES (?, ?, ?, ?, datetime('now'), datetime('now'), 1)
-      `, [
-        shortCode,
-        request.originalUrl,
-        request.customAlias || null,
-        request.expiresAt ? new Date(request.expiresAt).toISOString() : null
-      ]);
+      `,
+        [
+          shortCode,
+          request.originalUrl,
+          request.customAlias || null,
+          request.expiresAt ? new Date(request.expiresAt).toISOString() : null,
+        ]
+      );
 
       logInfo('Short URL created', {
         shortCode,
         originalUrl: request.originalUrl,
-        id: result.lastID
+        id: result.lastID,
       });
 
       return {
@@ -112,13 +117,12 @@ export class UrlService {
         originalUrl: request.originalUrl,
         customAlias: request.customAlias,
         createdAt: new Date().toISOString(),
-        expiresAt: request.expiresAt 
-          ? (request.expiresAt instanceof Date 
-              ? request.expiresAt.toISOString() 
-              : request.expiresAt)
-          : undefined
+        expiresAt: request.expiresAt
+          ? request.expiresAt instanceof Date
+            ? request.expiresAt.toISOString()
+            : request.expiresAt
+          : undefined,
       };
-
     } catch (error) {
       logError(error as Error, { originalUrl: request.originalUrl });
       throw error;
@@ -127,13 +131,16 @@ export class UrlService {
 
   async expandUrl(shortCode: string): Promise<string> {
     const db = this.dbManager.getDatabase();
-    
+
     try {
-      const urlRecord = await db.get(`
+      const urlRecord = await db.get(
+        `
         SELECT * FROM urls 
         WHERE (short_code = ? OR custom_alias = ?) 
         AND is_active = 1
-      `, [shortCode, shortCode]);
+      `,
+        [shortCode, shortCode]
+      );
 
       if (!urlRecord) {
         throw new Error('Short URL not found');
@@ -153,23 +160,25 @@ export class UrlService {
 
   async trackClick(shortCode: string, trackingData: ClickTrackingData): Promise<void> {
     const db = this.dbManager.getDatabase();
-    
+
     try {
       // Update click count and last accessed time
-      await db.run(`
+      await db.run(
+        `
         UPDATE urls 
         SET click_count = click_count + 1, 
             last_accessed = datetime('now'),
             updated_at = datetime('now')
         WHERE (short_code = ? OR custom_alias = ?) AND is_active = 1
-      `, [shortCode, shortCode]);
+      `,
+        [shortCode, shortCode]
+      );
 
       logInfo('Click tracked', {
         shortCode,
         userAgent: trackingData.userAgent?.substring(0, 100),
-        referrer: trackingData.referrer
+        referrer: trackingData.referrer,
       });
-      
     } catch (error) {
       logError(error as Error, { shortCode, trackingData });
       // Don't throw error for analytics - shouldn't block redirect
@@ -178,13 +187,16 @@ export class UrlService {
 
   async getAnalytics(shortCode: string): Promise<UrlAnalytics> {
     const db = this.dbManager.getDatabase();
-    
+
     try {
-      const urlRecord = await db.get(`
+      const urlRecord = await db.get(
+        `
         SELECT * FROM urls 
         WHERE (short_code = ? OR custom_alias = ?) 
         AND is_active = 1
-      `, [shortCode, shortCode]);
+      `,
+        [shortCode, shortCode]
+      );
 
       if (!urlRecord) {
         throw new Error('Short URL not found');
@@ -195,7 +207,9 @@ export class UrlService {
         originalUrl: urlRecord.original_url,
         clickCount: urlRecord.click_count || 0,
         createdAt: new Date(urlRecord.created_at).toISOString(),
-        lastAccessed: urlRecord.last_accessed ? new Date(urlRecord.last_accessed).toISOString() : undefined
+        lastAccessed: urlRecord.last_accessed
+          ? new Date(urlRecord.last_accessed).toISOString()
+          : undefined,
       };
     } catch (error) {
       logError(error as Error, { shortCode });
@@ -205,13 +219,16 @@ export class UrlService {
 
   async deleteUrl(shortCode: string): Promise<void> {
     const db = this.dbManager.getDatabase();
-    
+
     try {
-      const result = await db.run(`
+      const result = await db.run(
+        `
         UPDATE urls 
         SET is_active = 0, updated_at = datetime('now')
         WHERE (short_code = ? OR custom_alias = ?) AND is_active = 1
-      `, [shortCode, shortCode]);
+      `,
+        [shortCode, shortCode]
+      );
 
       if (result.changes === 0) {
         throw new Error('Short URL not found');

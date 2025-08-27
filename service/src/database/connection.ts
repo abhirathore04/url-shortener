@@ -41,22 +41,21 @@ export class DatabaseManager {
       // Connect to SQLite database
       this.db = await open({
         filename: process.env.DB_PATH || './data/shortener.db',
-        driver: sqlite3.Database
+        driver: sqlite3.Database,
       });
 
       // Enable foreign key constraints
       await this.db.exec('PRAGMA foreign_keys = ON;');
-      
+
       // Create tables
       await this.db.exec(CREATE_URL_TABLE);
 
       this.isConnected = true;
-      
+
       logInfo('Database connected successfully', {
         path: process.env.DB_PATH || './data/shortener.db',
-        event: 'database_connected'
+        event: 'database_connected',
       });
-
     } catch (error) {
       this.isConnected = false;
       logError(error as Error, { event: 'database_connection_failed' });

@@ -37,7 +37,10 @@ export const validateCreateUrl = (req: Request, res: Response, next: NextFunctio
     } else if (customAlias.length > 50) {
       errors.push({ field: 'customAlias', message: 'Custom alias too long (max 50 characters)' });
     } else if (!/^[a-zA-Z0-9-_]+$/.test(customAlias)) {
-      errors.push({ field: 'customAlias', message: 'Custom alias can only contain letters, numbers, hyphens, and underscores' });
+      errors.push({
+        field: 'customAlias',
+        message: 'Custom alias can only contain letters, numbers, hyphens, and underscores',
+      });
     }
   }
 
@@ -58,13 +61,13 @@ export const validateCreateUrl = (req: Request, res: Response, next: NextFunctio
       message: 'Validation failed',
       error: {
         code: 'VALIDATION_ERROR',
-        details: 'Please check the provided data'
+        details: 'Please check the provided data',
       },
       data: { errors },
       meta: {
         timestamp: new Date().toISOString(),
-        requestId: req.headers['x-request-id'] || 'unknown'
-      }
+        requestId: req.headers['x-request-id'] || 'unknown',
+      },
     });
     return; // ✅ Early return after sending response
   }
@@ -82,12 +85,12 @@ export const validateShortCode = (req: Request, res: Response, next: NextFunctio
       success: false,
       message: 'Short code is required',
       error: {
-        code: 'MISSING_SHORT_CODE'
+        code: 'MISSING_SHORT_CODE',
       },
       meta: {
         timestamp: new Date().toISOString(),
-        requestId: req.headers['x-request-id'] || 'unknown'
-      }
+        requestId: req.headers['x-request-id'] || 'unknown',
+      },
     });
     return; // ✅ Early return after sending response
   }
@@ -97,12 +100,12 @@ export const validateShortCode = (req: Request, res: Response, next: NextFunctio
       success: false,
       message: 'Invalid short code format',
       error: {
-        code: 'INVALID_SHORT_CODE'
+        code: 'INVALID_SHORT_CODE',
       },
       meta: {
         timestamp: new Date().toISOString(),
-        requestId: req.headers['x-request-id'] || 'unknown'
-      }
+        requestId: req.headers['x-request-id'] || 'unknown',
+      },
     });
     return; // ✅ Early return after sending response
   }

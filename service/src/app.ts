@@ -24,73 +24,83 @@ export function createApp(): express.Application {
   app.set('trust proxy', true);
 
   // Security middleware - should be first
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'"],
-        fontSrc: ["'self'"],
-        objectSrc: ["'none'"],
-        mediaSrc: ["'self'"],
-        frameSrc: ["'none'"],
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'"],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'"],
+          fontSrc: ["'self'"],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"],
+        },
       },
-    },
-    crossOriginEmbedderPolicy: false, // Allow embedding for development
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true
-    }
-  }));
+      crossOriginEmbedderPolicy: false, // Allow embedding for development
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true,
+      },
+    })
+  );
 
   // CORS configuration
   const corsOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim())
     : ['http://localhost:3000', 'http://localhost:8080', 'http://localhost:5173'];
 
-  app.use(cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (mobile apps, Postman, etc.)
-      if (!origin) return callback(null, true);
-      
-      if (corsOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Requested-With'],
-  }));
+  app.use(
+    cors({
+      origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+
+        if (corsOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      credentials: true,
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-ID', 'X-Requested-With'],
+    })
+  );
 
   // Compression middleware
-  app.use(compression({
-    filter: (req, res) => {
-      // Don't compress if no-transform cache-control header is set
-      if (req.headers['cache-control']?.includes('no-transform')) {
-        return false;
-      }
-      // Use default compression filter
-      return compression.filter(req, res);
-    },
-    level: 6, // Balanced compression level
-    threshold: 1024, // Only compress responses larger than 1KB
-  }));
+  app.use(
+    compression({
+      filter: (req, res) => {
+        // Don't compress if no-transform cache-control header is set
+        if (req.headers['cache-control']?.includes('no-transform')) {
+          return false;
+        }
+        // Use default compression filter
+        return compression.filter(req, res);
+      },
+      level: 6, // Balanced compression level
+      threshold: 1024, // Only compress responses larger than 1KB
+    })
+  );
 
   // Body parsing middleware
-  app.use(express.json({
-    limit: '10mb',
-    type: ['application/json', 'text/plain'],
-  }));
-  
-  app.use(express.urlencoded({
-    extended: true,
-    limit: '10mb',
-  }));
+  app.use(
+    express.json({
+      limit: '10mb',
+      type: ['application/json', 'text/plain'],
+    })
+  );
+
+  app.use(
+    express.urlencoded({
+      extended: true,
+      limit: '10mb',
+    })
+  );
 
   // Request ID middleware for tracing
   app.use((req, res, next) => {
@@ -113,7 +123,7 @@ export function createApp(): express.Application {
         requestId: req.headers['x-request-id'],
         userAgent: req.get('User-Agent'),
         ip: req.ip,
-        contentLength: res.get('Content-Length')
+        contentLength: res.get('Content-Length'),
       });
     });
     next();
@@ -126,7 +136,7 @@ export function createApp(): express.Application {
         headers: req.headers,
         body: req.body,
         query: req.query,
-        params: req.params
+        params: req.params,
       });
       next();
     });
@@ -173,8 +183,8 @@ export function createApp(): express.Application {
       },
       meta: {
         timestamp: new Date().toISOString(),
-        requestId: req.headers['x-request-id']
-      }
+        requestId: req.headers['x-request-id'],
+      },
     });
   });
 
@@ -211,7 +221,7 @@ export function createApp(): express.Application {
         '# HELP process_uptime_seconds Process uptime in seconds',
         '# TYPE process_uptime_seconds gauge',
         `process_uptime_seconds ${process.uptime()}`,
-        ''
+        '',
       ].join('\n');
 
       res.set('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
@@ -229,7 +239,7 @@ export function createApp(): express.Application {
     environment: process.env.NODE_ENV,
     metricsEnabled: process.env.ENABLE_METRICS_ENDPOINT === 'true',
     debugMode: process.env.LOG_LEVEL === 'debug',
-    documentationEnabled: true
+    documentationEnabled: true,
   });
 
   return app;

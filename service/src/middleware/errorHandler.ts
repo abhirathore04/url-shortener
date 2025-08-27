@@ -13,18 +13,13 @@ export interface ApiError extends Error {
   details?: unknown;
 }
 
-export const errorHandler = (
-  err: ApiError,
-  req: Request,
-  res: Response,
-  _next: NextFunction
-) => {
+export const errorHandler = (err: ApiError, req: Request, res: Response, _next: NextFunction) => {
   // Log the error for debugging
   logError(err, {
     url: req.url,
     method: req.method,
     ip: req.ip,
-    userAgent: req.get('User-Agent')
+    userAgent: req.get('User-Agent'),
   });
 
   // Default error response
@@ -57,12 +52,12 @@ export const errorHandler = (
     message,
     error: {
       code,
-      details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+      details: process.env.NODE_ENV === 'development' ? err.stack : undefined,
     },
     meta: {
       timestamp: new Date().toISOString(),
-      requestId: req.headers['x-request-id'] || 'unknown'
-    }
+      requestId: req.headers['x-request-id'] || 'unknown',
+    },
   });
 };
 
@@ -72,11 +67,11 @@ export const notFoundHandler = (req: Request, res: Response, _next: NextFunction
     message: 'Endpoint not found',
     error: {
       code: 'NOT_FOUND',
-      details: `The endpoint ${req.method} ${req.path} does not exist`
+      details: `The endpoint ${req.method} ${req.path} does not exist`,
     },
     meta: {
       timestamp: new Date().toISOString(),
-      requestId: req.headers['x-request-id'] || 'unknown'
-    }
+      requestId: req.headers['x-request-id'] || 'unknown',
+    },
   });
 };

@@ -47,22 +47,22 @@ For issues or questions, please contact the development team.
       contact: {
         name: 'API Support',
         email: 'support@urlshortener.dev',
-        url: 'https://github.com/your-username/url-shortener'
+        url: 'https://github.com/your-username/url-shortener',
       },
       license: {
         name: 'MIT',
-        url: 'https://opensource.org/licenses/MIT'
-      }
+        url: 'https://opensource.org/licenses/MIT',
+      },
     },
     servers: [
       {
         url: 'http://localhost:3000',
-        description: 'Development server'
+        description: 'Development server',
       },
       {
         url: 'https://api.urlshortener.dev',
-        description: 'Production server'
-      }
+        description: 'Production server',
+      },
     ],
     components: {
       schemas: {
@@ -75,7 +75,7 @@ For issues or questions, please contact the development team.
               format: 'uri',
               description: 'The original URL to shorten',
               example: 'https://www.example.com/very/long/url/that/needs/shortening',
-              maxLength: 2048
+              maxLength: 2048,
             },
             customAlias: {
               type: 'string',
@@ -83,32 +83,32 @@ For issues or questions, please contact the development team.
               example: 'my-custom-link',
               minLength: 3,
               maxLength: 50,
-              pattern: '^[a-zA-Z0-9-_]+$'
+              pattern: '^[a-zA-Z0-9-_]+$',
             },
             expiresAt: {
               type: 'string',
               format: 'date-time',
               description: 'Expiration date for the short URL (optional)',
-              example: '2025-12-31T23:59:59.000Z'
+              example: '2025-12-31T23:59:59.000Z',
             },
             description: {
               type: 'string',
               description: 'Description for the short URL (optional)',
               example: 'My awesome website',
-              maxLength: 255
-            }
-          }
+              maxLength: 255,
+            },
+          },
         },
         CreateUrlResponse: {
           type: 'object',
           properties: {
             success: {
               type: 'boolean',
-              example: true
+              example: true,
             },
             message: {
               type: 'string',
-              example: 'Short URL created successfully'
+              example: 'Short URL created successfully',
             },
             data: {
               type: 'object',
@@ -116,61 +116,61 @@ For issues or questions, please contact the development team.
                 id: {
                   type: 'integer',
                   description: 'Unique identifier for the URL',
-                  example: 1
+                  example: 1,
                 },
                 shortCode: {
                   type: 'string',
                   description: 'Generated short code',
-                  example: 'abc123'
+                  example: 'abc123',
                 },
                 shortUrl: {
                   type: 'string',
                   format: 'uri',
                   description: 'Complete short URL',
-                  example: 'http://localhost:3000/abc123'
+                  example: 'http://localhost:3000/abc123',
                 },
                 originalUrl: {
                   type: 'string',
                   format: 'uri',
                   description: 'Original URL',
-                  example: 'https://www.example.com/very/long/url'
+                  example: 'https://www.example.com/very/long/url',
                 },
                 customAlias: {
                   type: 'string',
                   nullable: true,
                   description: 'Custom alias if provided',
-                  example: 'my-custom-link'
+                  example: 'my-custom-link',
                 },
                 createdAt: {
                   type: 'string',
                   format: 'date-time',
                   description: 'Creation timestamp',
-                  example: '2025-08-25T07:39:39.086Z'
+                  example: '2025-08-25T07:39:39.086Z',
                 },
                 expiresAt: {
                   type: 'string',
                   format: 'date-time',
                   nullable: true,
                   description: 'Expiration timestamp',
-                  example: '2025-12-31T23:59:59.000Z'
-                }
-              }
+                  example: '2025-12-31T23:59:59.000Z',
+                },
+              },
             },
             meta: {
-              $ref: '#/components/schemas/ResponseMeta'
-            }
-          }
+              $ref: '#/components/schemas/ResponseMeta',
+            },
+          },
         },
         UrlAnalyticsResponse: {
           type: 'object',
           properties: {
             success: {
               type: 'boolean',
-              example: true
+              example: true,
             },
             message: {
               type: 'string',
-              example: 'Analytics retrieved successfully'
+              example: 'Analytics retrieved successfully',
             },
             data: {
               type: 'object',
@@ -178,127 +178,127 @@ For issues or questions, please contact the development team.
                 shortCode: {
                   type: 'string',
                   description: 'Short code',
-                  example: 'abc123'
+                  example: 'abc123',
                 },
                 originalUrl: {
                   type: 'string',
                   format: 'uri',
                   description: 'Original URL',
-                  example: 'https://www.example.com'
+                  example: 'https://www.example.com',
                 },
                 totalClicks: {
                   type: 'integer',
                   description: 'Total number of clicks',
-                  example: 42
+                  example: 42,
                 },
                 createdAt: {
                   type: 'string',
                   format: 'date-time',
                   description: 'Creation timestamp',
-                  example: '2025-08-25T07:39:39.086Z'
+                  example: '2025-08-25T07:39:39.086Z',
                 },
                 lastAccessed: {
                   type: 'string',
                   format: 'date-time',
                   nullable: true,
                   description: 'Last access timestamp',
-                  example: '2025-08-25T08:30:15.123Z'
-                }
-              }
+                  example: '2025-08-25T08:30:15.123Z',
+                },
+              },
             },
             meta: {
-              $ref: '#/components/schemas/ResponseMeta'
-            }
-          }
+              $ref: '#/components/schemas/ResponseMeta',
+            },
+          },
         },
         HealthResponse: {
           type: 'object',
           properties: {
             success: {
               type: 'boolean',
-              example: true
+              example: true,
             },
             message: {
               type: 'string',
-              example: 'Service is healthy'
+              example: 'Service is healthy',
             },
             data: {
               type: 'object',
               properties: {
                 status: {
                   type: 'string',
-                  example: 'healthy'
+                  example: 'healthy',
                 },
                 timestamp: {
                   type: 'string',
                   format: 'date-time',
-                  example: '2025-08-25T07:39:39.086Z'
+                  example: '2025-08-25T07:39:39.086Z',
                 },
                 version: {
                   type: 'string',
-                  example: '1.0.0'
+                  example: '1.0.0',
                 },
                 environment: {
                   type: 'string',
-                  example: 'production'
+                  example: 'production',
                 },
                 uptime: {
                   type: 'number',
                   description: 'Server uptime in seconds',
-                  example: 3600.5
+                  example: 3600.5,
                 },
                 database: {
                   type: 'string',
-                  example: 'connected'
-                }
-              }
+                  example: 'connected',
+                },
+              },
             },
             meta: {
-              $ref: '#/components/schemas/ResponseMeta'
-            }
-          }
+              $ref: '#/components/schemas/ResponseMeta',
+            },
+          },
         },
         ErrorResponse: {
           type: 'object',
           properties: {
             success: {
               type: 'boolean',
-              example: false
+              example: false,
             },
             message: {
               type: 'string',
-              example: 'An error occurred'
+              example: 'An error occurred',
             },
             error: {
               type: 'object',
               properties: {
                 code: {
                   type: 'string',
-                  example: 'VALIDATION_ERROR'
+                  example: 'VALIDATION_ERROR',
                 },
                 details: {
                   type: 'string',
-                  example: 'Please check the provided data'
-                }
-              }
+                  example: 'Please check the provided data',
+                },
+              },
             },
             meta: {
-              $ref: '#/components/schemas/ResponseMeta'
-            }
-          }
+              $ref: '#/components/schemas/ResponseMeta',
+            },
+          },
         },
         ValidationError: {
           type: 'object',
           properties: {
             field: {
               type: 'string',
-              example: 'url'
+              example: 'url',
             },
             message: {
               type: 'string',
-              example: 'URL is required'
-            }
-          }
+              example: 'URL is required',
+            },
+          },
         },
         ResponseMeta: {
           type: 'object',
@@ -307,15 +307,15 @@ For issues or questions, please contact the development team.
               type: 'string',
               format: 'date-time',
               description: 'Response timestamp',
-              example: '2025-08-25T07:39:39.086Z'
+              example: '2025-08-25T07:39:39.086Z',
             },
             requestId: {
               type: 'string',
               description: 'Unique request identifier for tracing',
-              example: '406d903e-524e-4f2a-982b-b8811965f573'
-            }
-          }
-        }
+              example: '406d903e-524e-4f2a-982b-b8811965f573',
+            },
+          },
+        },
       },
       responses: {
         ValidationError: {
@@ -325,7 +325,7 @@ For issues or questions, please contact the development team.
               schema: {
                 allOf: [
                   {
-                    $ref: '#/components/schemas/ErrorResponse'
+                    $ref: '#/components/schemas/ErrorResponse',
                   },
                   {
                     properties: {
@@ -335,112 +335,116 @@ For issues or questions, please contact the development team.
                           errors: {
                             type: 'array',
                             items: {
-                              $ref: '#/components/schemas/ValidationError'
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          }
+                              $ref: '#/components/schemas/ValidationError',
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                ],
+              },
+            },
+          },
         },
         NotFound: {
           description: 'Resource not found',
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse',
               },
               example: {
                 success: false,
                 message: 'Short URL not found',
                 error: {
                   code: 'URL_NOT_FOUND',
-                  details: 'The requested short URL does not exist'
+                  details: 'The requested short URL does not exist',
                 },
                 meta: {
                   timestamp: '2025-08-25T07:39:39.086Z',
-                  requestId: '406d903e-524e-4f2a-982b-b8811965f573'
-                }
-              }
-            }
-          }
+                  requestId: '406d903e-524e-4f2a-982b-b8811965f573',
+                },
+              },
+            },
+          },
         },
         RateLimit: {
           description: 'Rate limit exceeded',
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse',
               },
               example: {
                 success: false,
                 message: 'Too many requests, please try again later',
                 error: {
                   code: 'RATE_LIMIT_EXCEEDED',
-                  details: 'You have exceeded the maximum number of requests allowed'
+                  details: 'You have exceeded the maximum number of requests allowed',
                 },
                 meta: {
                   timestamp: '2025-08-25T07:39:39.086Z',
-                  requestId: 'rate-limited'
-                }
-              }
-            }
-          }
+                  requestId: 'rate-limited',
+                },
+              },
+            },
+          },
         },
         InternalError: {
           description: 'Internal server error',
           content: {
             'application/json': {
               schema: {
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse',
               },
               example: {
                 success: false,
                 message: 'An unexpected error occurred',
                 error: {
-                  code: 'INTERNAL_ERROR'
+                  code: 'INTERNAL_ERROR',
                 },
                 meta: {
                   timestamp: '2025-08-25T07:39:39.086Z',
-                  requestId: '406d903e-524e-4f2a-982b-b8811965f573'
-                }
-              }
-            }
-          }
-        }
-      }
+                  requestId: '406d903e-524e-4f2a-982b-b8811965f573',
+                },
+              },
+            },
+          },
+        },
+      },
     },
     tags: [
       {
         name: 'URLs',
-        description: 'URL shortening and management operations'
+        description: 'URL shortening and management operations',
       },
       {
         name: 'Analytics',
-        description: 'Usage statistics and analytics'
+        description: 'Usage statistics and analytics',
       },
       {
         name: 'Health',
-        description: 'Service health and monitoring'
-      }
-    ]
+        description: 'Service health and monitoring',
+      },
+    ],
   },
-  apis: ['./src/routes/*.ts', './src/api/*.ts']
+  apis: ['./src/routes/*.ts', './src/api/*.ts'],
 };
 
 const specs = swaggerJsdoc(options);
 
 export const setupSwagger = (app: Express): void => {
   // Swagger UI setup
-  app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(specs, {
-    explorer: true,
-    customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'URL Shortener API Documentation'
-  }));
+  app.use(
+    '/api/docs',
+    swaggerUi.serve,
+    swaggerUi.setup(specs, {
+      explorer: true,
+      customCss: '.swagger-ui .topbar { display: none }',
+      customSiteTitle: 'URL Shortener API Documentation',
+    })
+  );
 
   // JSON endpoint for API specification
   app.get('/api/docs.json', (req, res) => {

@@ -14,8 +14,8 @@ router.get('/', (req, res) => {
     data: {
       status: 'healthy',
       timestamp: new Date().toISOString(),
-      uptime: process.uptime()
-    }
+      uptime: process.uptime(),
+    },
   });
 });
 
@@ -25,8 +25,8 @@ router.get('/ready', (req, res) => {
     message: 'Service is ready',
     data: {
       status: 'ready',
-      timestamp: new Date().toISOString()
-    }
+      timestamp: new Date().toISOString(),
+    },
   });
 });
 
@@ -36,8 +36,8 @@ router.get('/live', (req, res) => {
     message: 'Service is live',
     data: {
       status: 'live',
-      timestamp: new Date().toISOString()
-    }
+      timestamp: new Date().toISOString(),
+    },
   });
 });
 

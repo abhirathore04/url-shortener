@@ -26,13 +26,13 @@ export class UrlController {
         url: req.body.url,
         customAlias: req.body.customAlias,
         expiresAt: req.body.expiresAt,
-        description: req.body.description
+        description: req.body.description,
       };
 
       const result = await this.urlService.shortenUrl({
         originalUrl: requestData.url,
         customAlias: requestData.customAlias,
-        expiresAt: requestData.expiresAt ? new Date(requestData.expiresAt) : undefined
+        expiresAt: requestData.expiresAt ? new Date(requestData.expiresAt) : undefined,
       });
 
       // ✅ FIXED: Direct assignment since service now returns strings
@@ -42,8 +42,8 @@ export class UrlController {
         shortUrl: result.shortUrl,
         originalUrl: result.originalUrl,
         customAlias: result.customAlias,
-        createdAt: result.createdAt,    // ← Already string from service
-        expiresAt: result.expiresAt     // ← Already string from service
+        createdAt: result.createdAt, // ← Already string from service
+        expiresAt: result.expiresAt, // ← Already string from service
       };
 
       res.status(201).json({
@@ -52,8 +52,8 @@ export class UrlController {
         data: response,
         meta: {
           timestamp: new Date().toISOString(),
-          requestId: req.headers['x-request-id'] || 'unknown'
-        }
+          requestId: req.headers['x-request-id'] || 'unknown',
+        },
       });
     } catch (error) {
       next(error);
@@ -67,16 +67,16 @@ export class UrlController {
   redirectToOriginal = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { shortCode } = req.params;
-      
+
       // Track the click for analytics
       await this.urlService.trackClick(shortCode, {
         userAgent: req.get('User-Agent'),
         referrer: req.get('Referer'),
-        ipAddress: req.ip
+        ipAddress: req.ip,
       });
 
       const originalUrl = await this.urlService.expandUrl(shortCode);
-      
+
       // Redirect with 301 (permanent) status
       res.redirect(301, originalUrl);
     } catch (error) {
@@ -93,13 +93,13 @@ export class UrlController {
       const { shortCode } = req.params;
       const analytics = await this.urlService.getAnalytics(shortCode);
 
-      // ✅ FIXED: Direct assignment since service now returns strings  
+      // ✅ FIXED: Direct assignment since service now returns strings
       const response: UrlAnalyticsResponse = {
         shortCode: analytics.shortCode,
         originalUrl: analytics.originalUrl,
         totalClicks: analytics.clickCount,
-        createdAt: analytics.createdAt,      // ← Already string from service
-        lastAccessed: analytics.lastAccessed // ← Already string from service
+        createdAt: analytics.createdAt, // ← Already string from service
+        lastAccessed: analytics.lastAccessed, // ← Already string from service
       };
 
       res.status(200).json({
@@ -108,8 +108,8 @@ export class UrlController {
         data: response,
         meta: {
           timestamp: new Date().toISOString(),
-          requestId: req.headers['x-request-id'] || 'unknown'
-        }
+          requestId: req.headers['x-request-id'] || 'unknown',
+        },
       });
     } catch (error) {
       next(error);
@@ -130,8 +130,8 @@ export class UrlController {
         message: 'URL deleted successfully',
         meta: {
           timestamp: new Date().toISOString(),
-          requestId: req.headers['x-request-id'] || 'unknown'
-        }
+          requestId: req.headers['x-request-id'] || 'unknown',
+        },
       });
     } catch (error) {
       next(error);
@@ -149,7 +149,7 @@ export class UrlController {
       version: process.env.npm_package_version || '1.0.0',
       environment: process.env.NODE_ENV || 'development',
       uptime: process.uptime(),
-      database: 'connected'
+      database: 'connected',
     };
 
     res.status(200).json({
@@ -158,8 +158,8 @@ export class UrlController {
       data: healthData,
       meta: {
         timestamp: new Date().toISOString(),
-        requestId: req.headers['x-request-id'] || 'unknown'
-      }
+        requestId: req.headers['x-request-id'] || 'unknown',
+      },
     });
   };
 }

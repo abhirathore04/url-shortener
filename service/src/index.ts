@@ -83,7 +83,7 @@ class Server {
           if (error.code === 'EADDRINUSE') {
             logError(new Error(`Port ${this.port} is already in use`), {
               event: 'port_in_use',
-              port: this.port
+              port: this.port,
             });
           } else {
             logError(error, { event: 'server_error' });
@@ -135,13 +135,13 @@ class Server {
     logInfo(`Shutting down server due to ${signal}...`, {
       event: 'shutdown_initiated',
       signal,
-      timeout: shutdownTimeout
+      timeout: shutdownTimeout,
     });
 
     const forceShutdownTimer = setTimeout(() => {
       logError(new Error('Forced shutdown due to timeout'), {
         event: 'forced_shutdown',
-        timeout: shutdownTimeout
+        timeout: shutdownTimeout,
       });
       process.exit(1);
     }, shutdownTimeout);
@@ -186,7 +186,7 @@ async function startServer(): Promise<void> {
       event: 'application_ready',
       pid: process.pid,
       nodeVersion: process.version,
-      platform: process.platform
+      platform: process.platform,
     });
   } catch (error) {
     logError(error as Error, { event: 'startup_failed' });

@@ -37,13 +37,13 @@ export interface ShortenUrlRequest {
 
 // ✅ FIXED: Added missing 'id' property and made dates strings for API responses
 export interface ShortenUrlResponse {
-  id: number;                    // ← ADDED: Required for API responses
+  id: number; // ← ADDED: Required for API responses
   shortCode: string;
   shortUrl: string;
   originalUrl: string;
   customAlias?: string;
-  expiresAt?: string;           // ← CHANGED: String for API consistency
-  createdAt: string;            // ← CHANGED: String for API consistency
+  expiresAt?: string; // ← CHANGED: String for API consistency
+  createdAt: string; // ← CHANGED: String for API consistency
 }
 
 // ✅ FIXED: Made dates strings for API consistency
@@ -51,8 +51,8 @@ export interface UrlAnalytics {
   shortCode: string;
   originalUrl: string;
   clickCount: number;
-  createdAt: string;            // ← CHANGED: String for API consistency
-  lastAccessed?: string;        // ← CHANGED: String for API consistency
+  createdAt: string; // ← CHANGED: String for API consistency
+  lastAccessed?: string; // ← CHANGED: String for API consistency
 }
 
 // =====================================
@@ -61,17 +61,17 @@ export interface UrlAnalytics {
 
 export interface ApiResponse<T = any> {
   success: boolean;
-  message?: string;             // ← ADDED: Optional message field
+  message?: string; // ← ADDED: Optional message field
   data?: T;
   error?: {
     code: string;
     message: string;
-    details?: string;           // ← ADDED: Optional details field
+    details?: string; // ← ADDED: Optional details field
   };
   meta: {
     timestamp: string;
     version?: string;
-    requestId?: string;         // ← ADDED: Request tracking
+    requestId?: string; // ← ADDED: Request tracking
   };
 }
 
@@ -118,16 +118,16 @@ export interface PaginatedResponse<T> {
 
 export interface DatabaseUrlRecord {
   id: number;
-  short_code: string;           // Database uses snake_case
+  short_code: string; // Database uses snake_case
   original_url: string;
   custom_alias?: string;
   user_id?: number;
   click_count: number;
-  last_accessed?: string;       // SQLite returns string dates
-  created_at: string;           // SQLite returns string dates
-  updated_at: string;           // SQLite returns string dates
-  expires_at?: string;          // SQLite returns string dates
-  is_active: number;            // SQLite uses 0/1 for boolean
+  last_accessed?: string; // SQLite returns string dates
+  created_at: string; // SQLite returns string dates
+  updated_at: string; // SQLite returns string dates
+  expires_at?: string; // SQLite returns string dates
+  is_active: number; // SQLite uses 0/1 for boolean
   title?: string;
   description?: string;
   favicon?: string;
@@ -206,7 +206,7 @@ export function dbRecordToResponse(dbRecord: DatabaseUrlRecord): ShortenUrlRespo
     originalUrl: dbRecord.original_url,
     customAlias: dbRecord.custom_alias || undefined,
     createdAt: new Date(dbRecord.created_at).toISOString(),
-    expiresAt: dbRecord.expires_at ? new Date(dbRecord.expires_at).toISOString() : undefined
+    expiresAt: dbRecord.expires_at ? new Date(dbRecord.expires_at).toISOString() : undefined,
   };
 }
 
@@ -219,7 +219,9 @@ export function dbRecordToAnalytics(dbRecord: DatabaseUrlRecord): UrlAnalytics {
     originalUrl: dbRecord.original_url,
     clickCount: dbRecord.click_count,
     createdAt: new Date(dbRecord.created_at).toISOString(),
-    lastAccessed: dbRecord.last_accessed ? new Date(dbRecord.last_accessed).toISOString() : undefined
+    lastAccessed: dbRecord.last_accessed
+      ? new Date(dbRecord.last_accessed).toISOString()
+      : undefined,
   };
 }
 
@@ -261,7 +263,7 @@ export const URL_CONSTRAINTS = {
   MAX_CUSTOM_ALIAS_LENGTH: 50,
   DEFAULT_EXPIRATION_DAYS: 365,
   MAX_TITLE_LENGTH: 255,
-  MAX_DESCRIPTION_LENGTH: 500
+  MAX_DESCRIPTION_LENGTH: 500,
 } as const;
 
 export const ERROR_CODES = {
@@ -271,7 +273,7 @@ export const ERROR_CODES = {
   INVALID_URL_FORMAT: 'INVALID_URL_FORMAT',
   INVALID_ALIAS_FORMAT: 'INVALID_ALIAS_FORMAT',
   URL_TOO_LONG: 'URL_TOO_LONG',
-  GENERATION_FAILED: 'GENERATION_FAILED'
+  GENERATION_FAILED: 'GENERATION_FAILED',
 } as const;
 
 // =====================================
@@ -279,18 +281,22 @@ export const ERROR_CODES = {
 // =====================================
 
 export function isShortenUrlRequest(obj: any): obj is ShortenUrlRequest {
-  return typeof obj === 'object' 
-    && obj !== null 
-    && typeof obj.originalUrl === 'string'
-    && isValidUrl(obj.originalUrl);
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.originalUrl === 'string' &&
+    isValidUrl(obj.originalUrl)
+  );
 }
 
 export function isDatabaseUrlRecord(obj: any): obj is DatabaseUrlRecord {
-  return typeof obj === 'object' 
-    && obj !== null 
-    && typeof obj.id === 'number'
-    && typeof obj.short_code === 'string'
-    && typeof obj.original_url === 'string';
+  return (
+    typeof obj === 'object' &&
+    obj !== null &&
+    typeof obj.id === 'number' &&
+    typeof obj.short_code === 'string' &&
+    typeof obj.original_url === 'string'
+  );
 }
 
 // =====================================

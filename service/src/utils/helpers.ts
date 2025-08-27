@@ -20,11 +20,11 @@ export function validateUrl(url: string): boolean {
  */
 export function generateShortCode(length: number = 6): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  
+
   if (length <= 0) {
     throw new Error('Length must be greater than 0');
   }
-  
+
   let result = '';
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -39,7 +39,7 @@ export function sanitizeInput(input: string): string {
   if (!input || typeof input !== 'string') {
     return '';
   }
-  
+
   return input
     .trim()
     .replace(/[<>"'&]/g, '') // Remove dangerous HTML characters ✅ FIXED: Unescaped
@@ -60,7 +60,7 @@ export function isEmpty(str: string | undefined | null): boolean {
  */
 export function formatDateToISO(date: Date | string | null | undefined): string | undefined {
   if (!date) return undefined;
-  
+
   try {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     return dateObj.toISOString();
