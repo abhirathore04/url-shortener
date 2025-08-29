@@ -6,10 +6,10 @@ import compression from 'compression';
 import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
-
 import { errorHandler, notFoundHandler } from './middleware/error';
 import { requestLogging, debugLogging } from './middleware/logging';
 import healthRouter from './routes/health';
+import urlRouter from './routes/url';  // Add this import
 import { logInfo } from './utils/logger';
 
 export function createApp(): express.Application {
@@ -29,14 +29,13 @@ export function createApp(): express.Application {
   // CORS configuration
   const corsOrigins = process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
-    : ['http://localhost:3000', 'http://localhost:8080'];
+    : ['http://localhost:3000', 'http://localhost:8080','http://localhost:3001'];
 
   app.use(
     cors({
       origin: function (origin, callback) {
         // Allow requests with no origin (mobile apps, Postman, etc.)
         if (!origin) return callback(null, true);
-
         if (corsOrigins.indexOf(origin) !== -1) {
           callback(null, true);
         } else {
@@ -72,7 +71,6 @@ export function createApp(): express.Application {
       type: ['application/json', 'text/plain'],
     })
   );
-
   app.use(
     express.urlencoded({
       extended: true,
@@ -82,13 +80,14 @@ export function createApp(): express.Application {
 
   // Custom middleware
   app.use(requestLogging);
-
   if (process.env.LOG_LEVEL === 'debug') {
     app.use(debugLogging);
   }
 
   // Routes
   app.use('/health', healthRouter);
+  app.use('/api/v1', urlRouter);  // Add API routes
+  app.use('/', urlRouter);        // Add redirect routes
 
   // Root endpoint
   app.get('/', (req, res) => {
@@ -109,6 +108,9 @@ export function createApp(): express.Application {
           ready: '/health/ready',
           live: '/health/live',
           metrics: '/metrics',
+          createUrl: 'POST /api/v1/urls',
+          getAnalytics: 'GET /api/v1/urls/:shortCode/analytics',
+          redirect: 'GET /:shortCode',
         },
       },
       meta: {
@@ -123,7 +125,7 @@ export function createApp(): express.Application {
       const metrics = [
         '# HELP nodejs_version_info Node.js version info',
         '# TYPE nodejs_version_info gauge',
-        `nodejs_version_info{version="${process.version}",major="${process.versions.node.split('.')[0]}"} 1`,
+        `nodejs_version_info{version="${process.version}",major="${process.version.split('.')[0]}"} 1`,
         '',
         '# HELP process_cpu_user_seconds_total Total user CPU time spent in seconds',
         '# TYPE process_cpu_user_seconds_total counter',
