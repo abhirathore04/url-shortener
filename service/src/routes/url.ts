@@ -13,7 +13,6 @@ import { ApiResponse } from '../types/config';
 import { generateShortCode, validateUrl, sanitizeInput } from '../utils/helpers';
 import { logInfo, logError } from '../utils/logger';
 
-
 const router = Router();
 
 // Initialize SQLite database
@@ -25,7 +24,7 @@ const initDB = async () => {
       // Ensure data directory exists
       const dbPath = process.env.DB_PATH || './data/shortener.db';
       const dbDir = path.dirname(dbPath);
-      
+
       if (!fs.existsSync(dbDir)) {
         fs.mkdirSync(dbDir, { recursive: true });
         logInfo('Created data directory', { path: dbDir });
@@ -34,9 +33,9 @@ const initDB = async () => {
       // Open database connection
       db = await open({
         filename: dbPath,
-        driver: sqlite3.Database
+        driver: sqlite3.Database,
       });
-      
+
       logInfo('Database connection opened', { path: dbPath });
 
       // Create urls table if it doesn't exist
@@ -52,10 +51,10 @@ const initDB = async () => {
           lastAccessed DATETIME
         )
       `);
-      
+
       logInfo('Database table initialized successfully');
-      
-    } catch (error: any) {  // ✅ Fixed: Added type annotation
+    } catch (error: any) {
+      // ✅ Fixed: Added type annotation
       logError(new Error('Database initialization failed'), { error: error.message });
       throw error;
     }
@@ -64,199 +63,205 @@ const initDB = async () => {
 };
 
 // POST /api/v1/urls - Create short URL
-router.post('/urls', asyncHandler(async (req: Request, res: Response) => {
-  const { originalUrl, customAlias, expiresAt } = req.body;
+router.post(
+  '/urls',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { originalUrl, customAlias, expiresAt } = req.body;
 
-  // Validate required fields
-  if (!originalUrl) {
-    throw new ApiError(400, 'MISSING_URL', 'originalUrl is required');
-  }
-
-  // Sanitize and validate URL
-  const cleanUrl = sanitizeInput(originalUrl);
-  if (!validateUrl(cleanUrl)) {
-    throw new ApiError(400, 'INVALID_URL', 'Please provide a valid URL');
-  }
-
-  // Generate or use custom short code
-  let shortCode: string;
-  if (customAlias) {
-    const cleanAlias = sanitizeInput(customAlias);
-    if (cleanAlias.length < 3) {
-      throw new ApiError(400, 'INVALID_ALIAS', 'Custom alias must be at least 3 characters');
+    // Validate required fields
+    if (!originalUrl) {
+      throw new ApiError(400, 'MISSING_URL', 'originalUrl is required');
     }
-    shortCode = cleanAlias;
-  } else {
-    shortCode = generateShortCode(7);
-  }
 
-  try {
-    const database = await initDB();
-    
-    // Check if short code already exists
-    const existing = await database.get(
-      'SELECT shortCode FROM urls WHERE shortCode = ?',
-      [shortCode]
-    );
-    
-    if (existing) {
-      // If auto-generated, try again with different code
-      if (!customAlias) {
-        shortCode = generateShortCode(8);
-        const existingRetry = await database.get(
-          'SELECT shortCode FROM urls WHERE shortCode = ?',
-          [shortCode]
-        );
-        if (existingRetry) {
-          throw new ApiError(409, 'GENERATION_FAILED', 'Unable to generate unique short code');
-        }
-      } else {
-        throw new ApiError(409, 'ALIAS_EXISTS', 'Short code already exists. Please choose a different alias.');
+    // Sanitize and validate URL
+    const cleanUrl = sanitizeInput(originalUrl);
+    if (!validateUrl(cleanUrl)) {
+      throw new ApiError(400, 'INVALID_URL', 'Please provide a valid URL');
+    }
+
+    // Generate or use custom short code
+    let shortCode: string;
+    if (customAlias) {
+      const cleanAlias = sanitizeInput(customAlias);
+      if (cleanAlias.length < 3) {
+        throw new ApiError(400, 'INVALID_ALIAS', 'Custom alias must be at least 3 characters');
       }
+      shortCode = cleanAlias;
+    } else {
+      shortCode = generateShortCode(7);
     }
 
-    // Insert new URL
-    const result = await database.run(
-      `INSERT INTO urls (shortCode, originalUrl, customAlias, expiresAt) 
-       VALUES (?, ?, ?, ?)`,
-      [shortCode, cleanUrl, customAlias || null, expiresAt || null]
-    );
+    try {
+      const database = await initDB();
 
-    const shortUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/${shortCode}`;
-
-    const response: ApiResponse<any> = {
-      success: true,
-      data: {
-        id: result.lastID,
+      // Check if short code already exists
+      const existing = await database.get('SELECT shortCode FROM urls WHERE shortCode = ?', [
         shortCode,
-        shortUrl,
+      ]);
+
+      if (existing) {
+        // If auto-generated, try again with different code
+        if (!customAlias) {
+          shortCode = generateShortCode(8);
+          const existingRetry = await database.get(
+            'SELECT shortCode FROM urls WHERE shortCode = ?',
+            [shortCode]
+          );
+          if (existingRetry) {
+            throw new ApiError(409, 'GENERATION_FAILED', 'Unable to generate unique short code');
+          }
+        } else {
+          throw new ApiError(
+            409,
+            'ALIAS_EXISTS',
+            'Short code already exists. Please choose a different alias.'
+          );
+        }
+      }
+
+      // Insert new URL
+      const result = await database.run(
+        `INSERT INTO urls (shortCode, originalUrl, customAlias, expiresAt) 
+       VALUES (?, ?, ?, ?)`,
+        [shortCode, cleanUrl, customAlias || null, expiresAt || null]
+      );
+
+      const shortUrl = `${process.env.BASE_URL || 'http://localhost:3000'}/${shortCode}`;
+
+      const response: ApiResponse<any> = {
+        success: true,
+        data: {
+          id: result.lastID,
+          shortCode,
+          shortUrl,
+          originalUrl: cleanUrl,
+          customAlias: customAlias || null,
+          clickCount: 0,
+          createdAt: new Date().toISOString(),
+          expiresAt: expiresAt || null,
+        },
+        meta: {
+          timestamp: new Date().toISOString(),
+          version: process.env.OTEL_SERVICE_VERSION || '0.1.0',
+        },
+      };
+
+      logInfo('URL shortened successfully', {
+        shortCode,
         originalUrl: cleanUrl,
         customAlias: customAlias || null,
-        clickCount: 0,
-        createdAt: new Date().toISOString(),
-        expiresAt: expiresAt || null
-      },
-      meta: {
-        timestamp: new Date().toISOString(),
-        version: process.env.OTEL_SERVICE_VERSION || '0.1.0'
+      });
+
+      res.status(201).json(response);
+    } catch (error: any) {
+      // ✅ Fixed: Added type annotation
+      // Log the actual database error for debugging
+      logError(new Error('Database operation failed'), {
+        originalError: error.message,
+        stack: error.stack,
+        shortCode,
+        originalUrl: cleanUrl,
+      });
+
+      if (error instanceof ApiError) {
+        throw error;
       }
-    };
-
-    logInfo('URL shortened successfully', {
-      shortCode,
-      originalUrl: cleanUrl,
-      customAlias: customAlias || null
-    });
-
-    res.status(201).json(response);
-
-  } catch (error: any) {  // ✅ Fixed: Added type annotation
-    // Log the actual database error for debugging
-    logError(new Error('Database operation failed'), { 
-      originalError: error.message,
-      stack: error.stack,
-      shortCode,
-      originalUrl: cleanUrl
-    });
-    
-    if (error instanceof ApiError) {
-      throw error;
+      throw new ApiError(500, 'DATABASE_ERROR', `Failed to create short URL: ${error.message}`);
     }
-    throw new ApiError(500, 'DATABASE_ERROR', `Failed to create short URL: ${error.message}`);
-  }
-}));
+  })
+);
 
 // GET /api/v1/urls/:shortCode/analytics - Get URL analytics
-router.get('/urls/:shortCode/analytics', asyncHandler(async (req: Request, res: Response) => {
-  const { shortCode } = req.params;
+router.get(
+  '/urls/:shortCode/analytics',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { shortCode } = req.params;
 
-  if (!shortCode) {
-    throw new ApiError(400, 'MISSING_CODE', 'Short code is required');
-  }
-
-  try {
-    const database = await initDB();
-    const urlData = await database.get(
-      'SELECT * FROM urls WHERE shortCode = ?',
-      [shortCode]
-    );
-
-    if (!urlData) {
-      throw new ApiError(404, 'URL_NOT_FOUND', 'Short URL not found');
+    if (!shortCode) {
+      throw new ApiError(400, 'MISSING_CODE', 'Short code is required');
     }
 
-    const response: ApiResponse<any> = {
-      success: true,
-      data: {
-        shortCode: urlData.shortCode,
-        originalUrl: urlData.originalUrl,
-        clickCount: urlData.clickCount,
-        createdAt: urlData.createdAt,
-        lastAccessed: urlData.lastAccessed || null
-      },
-      meta: {
-        timestamp: new Date().toISOString(),
-        version: process.env.OTEL_SERVICE_VERSION || '0.1.0'
+    try {
+      const database = await initDB();
+      const urlData = await database.get('SELECT * FROM urls WHERE shortCode = ?', [shortCode]);
+
+      if (!urlData) {
+        throw new ApiError(404, 'URL_NOT_FOUND', 'Short URL not found');
       }
-    };
 
-    res.json(response);
+      const response: ApiResponse<any> = {
+        success: true,
+        data: {
+          shortCode: urlData.shortCode,
+          originalUrl: urlData.originalUrl,
+          clickCount: urlData.clickCount,
+          createdAt: urlData.createdAt,
+          lastAccessed: urlData.lastAccessed || null,
+        },
+        meta: {
+          timestamp: new Date().toISOString(),
+          version: process.env.OTEL_SERVICE_VERSION || '0.1.0',
+        },
+      };
 
-  } catch (error: any) {  // ✅ Fixed: Added type annotation
-    logError(new Error('Analytics fetch failed'), { 
-      originalError: error.message,
-      shortCode 
-    });
-    
-    if (error instanceof ApiError) {
-      throw error;
+      res.json(response);
+    } catch (error: any) {
+      // ✅ Fixed: Added type annotation
+      logError(new Error('Analytics fetch failed'), {
+        originalError: error.message,
+        shortCode,
+      });
+
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(500, 'DATABASE_ERROR', 'Failed to get analytics');
     }
-    throw new ApiError(500, 'DATABASE_ERROR', 'Failed to get analytics');
-  }
-}));
+  })
+);
 
 // GET /:shortCode - Redirect to original URL
-router.get('/:shortCode', asyncHandler(async (req: Request, res: Response) => {
-  const { shortCode } = req.params;
+router.get(
+  '/:shortCode',
+  asyncHandler(async (req: Request, res: Response) => {
+    const { shortCode } = req.params;
 
-  try {
-    const database = await initDB();
-    const urlData = await database.get(
-      'SELECT * FROM urls WHERE shortCode = ?',
-      [shortCode]
-    );
+    try {
+      const database = await initDB();
+      const urlData = await database.get('SELECT * FROM urls WHERE shortCode = ?', [shortCode]);
 
-    if (!urlData) {
-      throw new ApiError(404, 'URL_NOT_FOUND', 'Short URL not found');
+      if (!urlData) {
+        throw new ApiError(404, 'URL_NOT_FOUND', 'Short URL not found');
+      }
+
+      // Check if expired
+      if (urlData.expiresAt && new Date() > new Date(urlData.expiresAt)) {
+        throw new ApiError(410, 'URL_EXPIRED', 'This short URL has expired');
+      }
+
+      // Update click count and last accessed time
+      await database.run(
+        'UPDATE urls SET clickCount = clickCount + 1, lastAccessed = CURRENT_TIMESTAMP WHERE shortCode = ?',
+        [shortCode]
+      );
+
+      logInfo('URL redirect', { shortCode, originalUrl: urlData.originalUrl });
+
+      // Redirect to original URL
+      res.redirect(urlData.originalUrl);
+    } catch (error: any) {
+      // ✅ Fixed: Added type annotation
+      logError(new Error('Redirect failed'), {
+        originalError: error.message,
+        shortCode,
+      });
+
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(500, 'DATABASE_ERROR', 'Failed to redirect');
     }
-
-    // Check if expired
-    if (urlData.expiresAt && new Date() > new Date(urlData.expiresAt)) {
-      throw new ApiError(410, 'URL_EXPIRED', 'This short URL has expired');
-    }
-
-    // Update click count and last accessed time
-    await database.run(
-      'UPDATE urls SET clickCount = clickCount + 1, lastAccessed = CURRENT_TIMESTAMP WHERE shortCode = ?',
-      [shortCode]
-    );
-
-    logInfo('URL redirect', { shortCode, originalUrl: urlData.originalUrl });
-
-    // Redirect to original URL
-    res.redirect(urlData.originalUrl);
-
-  } catch (error: any) {  // ✅ Fixed: Added type annotation
-    logError(new Error('Redirect failed'), { 
-      originalError: error.message,
-      shortCode 
-    });
-    
-    if (error instanceof ApiError) {
-      throw error;
-    }
-    throw new ApiError(500, 'DATABASE_ERROR', 'Failed to redirect');
-  }
-}));
+  })
+);
 
 export default router;

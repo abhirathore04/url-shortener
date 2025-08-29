@@ -49,9 +49,17 @@ export function createApp(): express.Application {
   );
 
   // CORS configuration - RESOLVED: Keep both frontend ports
-  const corsOrigins = process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGINS
-    ? (process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGINS)!.split(',').map((origin) => origin.trim())
-    : ['http://localhost:3000', 'http://localhost:8080', 'http://localhost:3001', 'http://localhost:5173'];
+  const corsOrigins =
+    process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGINS
+      ? (process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGINS)!
+          .split(',')
+          .map((origin) => origin.trim())
+      : [
+          'http://localhost:3000',
+          'http://localhost:8080',
+          'http://localhost:3001',
+          'http://localhost:5173',
+        ];
 
   app.use(
     cors({
