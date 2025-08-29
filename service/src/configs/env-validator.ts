@@ -1,9 +1,11 @@
 /**
  * Environment configuration validation
  */
+
 import { AppConfig } from '../types/config';
 
 export function validateEnvironment(): AppConfig {
+  /* eslint-disable no-console */
   console.log('🔍 Validating environment configuration...');
 
   const config: AppConfig = {
@@ -38,9 +40,11 @@ export function validateEnvironment(): AppConfig {
 
   // Warn about missing optional fields but don't fail
   if (!config.MONGO_URI) {
-    console.warn('⚠️  MONGO_URI not provided, will use default connection');
+    console.warn('⚠️ MONGO_URI not provided, will use default connection');
   }
 
   console.log(`✅ Environment validation passed for ${config.NODE_ENV} environment`);
+  /* eslint-enable no-console */
+
   return config;
 }
