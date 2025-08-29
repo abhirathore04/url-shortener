@@ -68,3 +68,8 @@ mongodb-data/
 redis-data/
 prometheus-data/
 grafana-data/
+
+# SQLite databases (don't track local DBs)
+*.sqlite
+*.sqlite3
+/data/

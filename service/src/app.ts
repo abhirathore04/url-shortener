@@ -48,10 +48,18 @@ export function createApp(): express.Application {
     })
   );
 
-  // CORS configuration
-  const corsOrigins = process.env.ALLOWED_ORIGINS
-    ? process.env.ALLOWED_ORIGINS.split(',').map((origin) => origin.trim())
-    : ['http://localhost:3000', 'http://localhost:8080', 'http://localhost:5173'];
+  // CORS configuration - RESOLVED: Keep both frontend ports
+  const corsOrigins =
+    process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGINS
+      ? (process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGINS)!
+          .split(',')
+          .map((origin) => origin.trim())
+      : [
+          'http://localhost:3000',
+          'http://localhost:8080',
+          'http://localhost:3001',
+          'http://localhost:5173',
+        ];
 
   app.use(
     cors({
@@ -94,7 +102,6 @@ export function createApp(): express.Application {
       type: ['application/json', 'text/plain'],
     })
   );
-
   app.use(
     express.urlencoded({
       extended: true,
@@ -179,6 +186,9 @@ export function createApp(): express.Application {
           api: '/api/v1/urls',
           documentation: '/api/docs',
           metrics: '/metrics',
+          createUrl: 'POST /api/v1/urls',
+          getAnalytics: 'GET /api/v1/urls/:shortCode/analytics',
+          redirect: 'GET /:shortCode',
         },
       },
       meta: {
@@ -196,7 +206,7 @@ export function createApp(): express.Application {
       const metrics = [
         '# HELP nodejs_version_info Node.js version info',
         '# TYPE nodejs_version_info gauge',
-        `nodejs_version_info{version="${process.version}",major="${process.versions.node.split('.')[0]}"} 1`,
+        `nodejs_version_info{version="${process.version}",major="${process.version.split('.')[0]}"} 1`,
         '',
         '# HELP process_cpu_user_seconds_total Total user CPU time spent in seconds',
         '# TYPE process_cpu_user_seconds_total counter',
